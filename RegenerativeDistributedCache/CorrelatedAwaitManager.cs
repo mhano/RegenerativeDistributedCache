@@ -53,9 +53,9 @@ namespace RegenerativeDistributedCache
     /// _remoteBus.SubscribeTMessage(m => _singletonCorrelatedAwaitManager.NotifyAwaiters(m));
     /// 
     /// Use:
-    /// using(var correlatedAwaiterManager = _correlatedAwaitManager.CreateAwaiter(key))
+    /// using(var correlatedAwaiter = _correlatedAwaitManager.CreateAwaiter(key))
     /// {
-    ///     return correlatedAwaiterManager.Task.ConfigureAwait(false);
+    ///     return correlatedAwaiter.Task.ConfigureAwait(false);
     /// }
     /// 
     /// * awaiter must be disposed or cancelled or you will have a memory leak (awaiter.Cancel())
