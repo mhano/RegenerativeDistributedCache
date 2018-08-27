@@ -18,20 +18,25 @@ of their expiry (and to manage this across a farm of web/service nodes).
 
 As a static/shared instance or singleton from your IOC container:
 
-    regenerativeCacheManagerSingleton = new RegenerativeCacheManager("mykeyspace", externalCache, distributedLockFac, fanoutBus)
-    {
-        CacheExpiryToleranceSeconds = 60,
-        MinimumForwardSchedulingSeconds = 5,
-    };
+```C#
+regenerativeCacheManagerSingleton = new RegenerativeCacheManager(
+	"mykeyspace", externalCache, distributedLockFactory, fanoutBus)
+{
+    CacheExpiryToleranceSeconds = 60,
+    MinimumForwardSchedulingSeconds = 5,
+};
+```
 
 ### Use:
 
-    var result = regenerativeCacheManagerSingleton.GetOrAdd(
-        key: $"{nameof(Item)}:{itemId}", 
-        generateFunc: () => GetItem(itemId).AsString(), // will not be called if value exists
-        inactiveRetention: TimeSpan.FromMinutes(30),
-        regenerationInterval : TimeSpan.FromMinutes(2)
-    );
+```C#
+var result = regenerativeCacheManagerSingleton.GetOrAdd(
+    key: $"{nameof(Item)}:{itemId}", 
+    generateFunc: () => GetItem(itemId).AsString(), // will not be called if value exists
+    inactiveRetention: TimeSpan.FromMinutes(30),
+    regenerationInterval : TimeSpan.FromMinutes(2)
+);
+```
 
 ## CorrelatedAwaitManager
 
@@ -51,14 +56,18 @@ but much cheaper than setting up a specific subscriber.
 
 ### Setup:
 
-    _remoteBus.SubscribeTMessage(m => await _singletonCorrelatedAwaitManager.NotifyAwaiters(m));
+```C#
+_remoteBus.SubscribeTMessage(m => _singletonCorrelatedAwaitManager.NotifyAwaiters(m));
+```
 
 ### Use:
 
-    using(var correlatedAwaiterManager = _correlatedAwaitManager.CreateAwaiter(key))
-    {
-        return correlatedAwaiterManager.Task.ConfigureAwait(false);
-    }
+```C#
+using(var correlatedAwaiterManager = _correlatedAwaitManager.CreateAwaiter(key))
+{
+    return correlatedAwaiterManager.Task.ConfigureAwait(false);
+}
+```
 
 ### CAUTION awaiter must be disposed or cancelled (awaiter.Cancel) or you will have a memory leak.
 

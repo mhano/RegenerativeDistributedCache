@@ -50,7 +50,7 @@ namespace RegenerativeDistributedCache
     /// but much cheaper than setting up a specific subscriber.
     /// 
     /// Setup:
-    /// _remoteBus.SubscribeTMessage(m => await _singletonCorrelatedAwaitManager.NotifyAwaiters(m));
+    /// _remoteBus.SubscribeTMessage(m => _singletonCorrelatedAwaitManager.NotifyAwaiters(m));
     /// 
     /// Use:
     /// using(var correlatedAwaiterManager = _correlatedAwaitManager.CreateAwaiter(key))
