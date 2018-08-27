@@ -33,8 +33,8 @@ regenerativeCacheManagerSingleton = new RegenerativeCacheManager(
 var result = regenerativeCacheManagerSingleton.GetOrAdd(
     key: $"{nameof(Item)}:{itemId}", 
     generateFunc: () => GetItem(itemId).AsString(), // will not be called if value exists
-    inactiveRetention: TimeSpan.FromMinutes(30),
-    regenerationInterval : TimeSpan.FromMinutes(2)
+    inactiveRetention: TimeSpan.FromMinutes(30), // total time in cache and regenerating
+    regenerationInterval : TimeSpan.FromMinutes(2) // how frequently to update cache from generateFunc()
 );
 ```
 
