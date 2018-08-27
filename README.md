@@ -63,14 +63,14 @@ _remoteBus.SubscribeTMessage(m => _singletonCorrelatedAwaitManager.NotifyAwaiter
 ### Use:
 
 ```C#
+// CAUTION awaiter must be disposed or cancelled (awaiter.Cancel) or you will have a memory leak.
+
 using(var correlatedAwaiter = _correlatedAwaitManager.CreateAwaiter(key))
 {
     return await correlatedAwaiter.Task.ConfigureAwait(false);
     // or return correlatedAwaiter.Task.Result;
 }
 ```
-
-### CAUTION awaiter must be disposed or cancelled (awaiter.Cancel) or you will have a memory leak.
 
 ## MemoryFrontedExternalCache
 
