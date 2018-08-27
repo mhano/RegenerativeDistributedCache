@@ -5,7 +5,7 @@ of their expiry (and to manage this across a farm of web/service nodes).
 
 Requires an external (network) cache, a fan out pub/sub message bus, and a distributed locking
 mechanism (all three of these can be provided by Redis or you might use alternatives for one or
-more of these such as RabbitMq for messaging). Basdic redis implementations of these are provided
+more of these such as RabbitMq for messaging). Basic redis implementations of these are provided
 in RegenerativeCacheManager.Redis
 
 
@@ -18,20 +18,20 @@ of their expiry (and to manage this across a farm of web/service nodes).
 
 As a static/shared instance or singleton from your IOC container:
 
-  regenerativeCacheManagerSingleton = new RegenerativeCacheManager("mykeyspace", externalCache, distributedLockFac, fanoutBus)
-  {
-  	CacheExpiryToleranceSeconds = 60,
-  	MinimumForwardSchedulingSeconds = 5,
-  };
+    regenerativeCacheManagerSingleton = new RegenerativeCacheManager("mykeyspace", externalCache, distributedLockFac, fanoutBus)
+    {
+        CacheExpiryToleranceSeconds = 60,
+        MinimumForwardSchedulingSeconds = 5,
+    };
 
 ### Use:
 
-  var result = regenerativeCacheManagerSingleton.GetOrAdd(
-  	key: $"{nameof(Item)}:{itemId}", 
-  	generateFunc: () => GetItem(itemId).AsString(), // will not be called if value exists
-  	inactiveRetention: TimeSpan.FromMinutes(30),
-  	regenerationInterval : TimeSpan.FromMinutes(2)
-  );
+    var result = regenerativeCacheManagerSingleton.GetOrAdd(
+        key: $"{nameof(Item)}:{itemId}", 
+        generateFunc: () => GetItem(itemId).AsString(), // will not be called if value exists
+        inactiveRetention: TimeSpan.FromMinutes(30),
+        regenerationInterval : TimeSpan.FromMinutes(2)
+    );
 
 ## CorrelatedAwaitManager
 
@@ -51,14 +51,14 @@ but much cheaper than setting up a specific subscriber.
 
 ### Setup:
 
-  _remoteBus.SubscribeTMessage(m => await _singletonCorrelatedAwaitManager.NotifyAwaiters(m));
+    _remoteBus.SubscribeTMessage(m => await _singletonCorrelatedAwaitManager.NotifyAwaiters(m));
 
 ### Use:
 
-  using(var correlatedAwaiterManager = _correlatedAwaitManager.CreateAwaiter(key))
-  {
-      return correlatedAwaiterManager.Task.ConfigureAwait(false);
-  }
+    using(var correlatedAwaiterManager = _correlatedAwaitManager.CreateAwaiter(key))
+    {
+        return correlatedAwaiterManager.Task.ConfigureAwait(false);
+    }
 
 ### CAUTION awaiter must be disposed or cancelled (awaiter.Cancel) or you will have a memory leak.
 
