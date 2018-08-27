@@ -42,6 +42,7 @@
     <Reference Include="System.IO.Compression, Version=4.2.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL" />
     <Reference Include="System.IO.Compression.FileSystem" />
     <Reference Include="System.Numerics" />
+    <Reference Include="System.Runtime.Caching" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -62,6 +63,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Helpers\DualTraceWriter .cs" />
+    <Compile Include="Helpers\RedisMock.cs" />
     <Compile Include="RegenerativeCacheManagerTests.cs" />
     <Compile Include="Helpers\RedisIntercept.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

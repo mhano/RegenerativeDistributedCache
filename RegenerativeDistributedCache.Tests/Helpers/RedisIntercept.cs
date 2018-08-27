@@ -7,9 +7,15 @@ using IDistributedLockFactory = RegenerativeDistributedCache.Interfaces.IDistrib
 
 namespace RegenerativeDistributedCache.Tests.Helpers
 {
+    /// <summary>
+    /// Caution - disposing any instance of this (which has been setup to use the app domain level mock
+    /// of redis by passing "mock" to ctor) resets the entire (app domain local) mock of redis
+    /// (removes all subscriptions / cache entries).
+    /// </summary>
     internal class RedisIntercept : IExternalCache, IDistributedLockFactory, IFanOutBus, IDisposable
     {
         private readonly BasicRedisWrapper _basicRedisWrapper;
+        private readonly RedisMock _redisMock;
 
         public IExternalCache Cache => this;
         public IDistributedLockFactory Lock => this;
@@ -22,26 +28,37 @@ namespace RegenerativeDistributedCache.Tests.Helpers
         public ConcurrentBag<KeyValuePair<string,bool>> LockAttempts = new ConcurrentBag<KeyValuePair<string, bool>>();
         public ConcurrentBag<string> ReceivedMessages = new ConcurrentBag<string>();
 
-        public RedisIntercept(string redisConfiguration =  "localhost:6379")
+        /// <param name="redisConfiguration">redis connection config ("localhost:6379") or "mock"</param>
+        public RedisIntercept(string redisConfiguration =  "mock")
         {
-            _basicRedisWrapper = new BasicRedisWrapper(redisConfiguration);
+            if (redisConfiguration.ToLowerInvariant() == "mock")
+            {
+                _basicRedisWrapper = null;
+                _redisMock = new RedisMock();
+            }
+            else
+            {
+                _basicRedisWrapper =  new BasicRedisWrapper(redisConfiguration);
+                _redisMock = null;
+            }
         }
 
         public void Dispose()
         {
             _basicRedisWrapper?.Dispose();
+            _redisMock?.Dispose();
         }
 
         public void StringSet(string key, string val, TimeSpan absoluteExpiration)
         {
-            _basicRedisWrapper.Cache.StringSet(key, val, absoluteExpiration);
+            (_redisMock?.Cache ?? _basicRedisWrapper.Cache).StringSet(key, val, absoluteExpiration);
 
             CacheSets.Add(new KeyValuePair<string, string>(key, val));
         }
 
         public string StringGetWithExpiry(string key, out TimeSpan expiry)
         {
-            var value = _basicRedisWrapper.Cache.StringGetWithExpiry(key, out expiry);
+            var value = (_redisMock?.Cache ?? _basicRedisWrapper.Cache).StringGetWithExpiry(key, out expiry);
 
             CacheGets.Add(new KeyValuePair<string, string>(key, value));
 
@@ -50,7 +67,7 @@ namespace RegenerativeDistributedCache.Tests.Helpers
 
         public IDisposable CreateLock(string lockKey, TimeSpan lockExpiryTime)
         {
-            var lck = _basicRedisWrapper.Lock.CreateLock(lockKey, lockExpiryTime);
+            var lck = (_redisMock?.Lock ?? _basicRedisWrapper.Lock).CreateLock(lockKey, lockExpiryTime);
 
             LockAttempts.Add(new KeyValuePair<string, bool>(lockKey, lck != null));
 
@@ -60,7 +77,7 @@ namespace RegenerativeDistributedCache.Tests.Helpers
         public void Subscribe(string topicKey, Action<string> messageReceive)
         {
             Subscribes.Add(topicKey);
-            _basicRedisWrapper.Bus.Subscribe(topicKey, value =>
+            (_redisMock?.Bus ?? _basicRedisWrapper.Bus).Subscribe(topicKey, value =>
             {
                 ReceivedMessages.Add(value);
                 messageReceive(value);
@@ -71,7 +88,7 @@ namespace RegenerativeDistributedCache.Tests.Helpers
         {
             Publishes.Add(new KeyValuePair<string, string>(topicKey, value));
 
-            _basicRedisWrapper.Bus.Publish(topicKey, value);
+            (_redisMock?.Bus ?? _basicRedisWrapper.Bus).Publish(topicKey, value);
         }
     }
 }

@@ -17,6 +17,9 @@ namespace RegenerativeDistributedCache.Tests
             this._output = output;
         }
 
+        private const bool UseMockedRedis = true;
+        private const string RedisConnection = UseMockedRedis ? "mock" : "localhost:6379";
+
         private string MockGenDelay(string val)
         {
             Task.Delay(200).Wait();
@@ -29,7 +32,7 @@ namespace RegenerativeDistributedCache.Tests
             var testRunKeyspace = $"{Guid.NewGuid():N}";
 
             var tw = new TraceWriter();
-            using (var ext = new RedisIntercept())
+            using (var ext = new RedisIntercept(RedisConnection))
             using (var cache = new RegenerativeCacheManager(testRunKeyspace, ext.Cache, ext.Lock, ext.Bus, tw)
             {
                 CacheExpiryToleranceSeconds = 1.5,
@@ -94,7 +97,7 @@ namespace RegenerativeDistributedCache.Tests
             var testRunKeyspace = $"{Guid.NewGuid():N}";
 
             var dtw = new DualTraceWriter();
-            using (var node1Ext = new RedisIntercept())
+            using (var node1Ext = new RedisIntercept(RedisConnection))
             using (var node1Cache = new RegenerativeCacheManager(testRunKeyspace, node1Ext.Cache, node1Ext.Lock, node1Ext.Bus, dtw.T1)
             {
                 CacheExpiryToleranceSeconds = 1.5,
@@ -102,7 +105,7 @@ namespace RegenerativeDistributedCache.Tests
                 TriggerDelaySeconds = 1,
                 FarmClockToleranceSeconds = 0.1,
             })
-            using (var node2Ext = new RedisIntercept())
+            using (var node2Ext = new RedisIntercept(RedisConnection))
             using (var node2Cache = new RegenerativeCacheManager(testRunKeyspace, node2Ext.Cache, node2Ext.Lock, node2Ext.Bus, dtw.T2)
             {
                 CacheExpiryToleranceSeconds = 1.5,
