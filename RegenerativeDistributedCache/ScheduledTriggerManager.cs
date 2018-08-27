@@ -63,13 +63,13 @@ namespace RegenerativeDistributedCache
         /// and try to schedule the next re-generation for 60 seconds after the previous generation started (15 seconds in the past), this setting allows that need 
         /// to regenerate to be scheduled for near immediately but not quite.
         /// </summary>
-        public int MinimumForwardSchedulingSeconds { get; set; } = 5;
+        public double MinimumForwardSchedulingSeconds { get; set; } = 5;
 
         /// <summary>
         /// Delay after expiry of trigger to force trigger item to be expired with a get against the trigger - usually 1 second.
         /// Ensures .net memory cache regards the item as expired and triggers the removal and thus setup of next trigger.
         /// </summary>
-        public int TriggerDelaySeconds { get; set; } = 1;
+        public double TriggerDelaySeconds { get; set; } = 1;
 
         public void EnsureTriggerScheduled(string key, Action callbackAction, TimeSpan maxInactiveRetention, TimeSpan callbackInterval, DateTime prevCallbackStartTimeUtc, DateTime? lastActive = null, Guid? traceId = null)
         {

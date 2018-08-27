@@ -27,6 +27,7 @@
  */
 #endregion
 
+using System;
 using Newtonsoft.Json;
 
 namespace RegenerativeDistributedCache.Internals
@@ -36,24 +37,31 @@ namespace RegenerativeDistributedCache.Internals
         public bool Success { get; set; }
         public string Key { get; set; }
         public string Exception { get; set; }
+        public string Sender { get; set; }
 
-        #region Ctor and Serialization
 
         public ResultNotication()
         { }
 
-        public ResultNotication(string key)
+        public ResultNotication(string key, string senderId)
         {
             Success = true;
             Key = key;
             Exception = null;
+            Sender = senderId;
         }
 
-        public ResultNotication(string key, string exception)
+        public ResultNotication(string key, string exception, string senderId)
         {
             Success = false;
             Key = key;
             Exception = exception;
+            Sender = senderId;
+        }
+
+        public bool IsLocalSender(string localSenderId)
+        {
+            return Sender == localSenderId;
         }
 
         public static ResultNotication FromString(string val)
@@ -67,6 +75,5 @@ namespace RegenerativeDistributedCache.Internals
             // object is small and more complex, json serialization sufficient
             return JsonConvert.SerializeObject(this, Formatting.None, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
         }
-        #endregion
     }
 }

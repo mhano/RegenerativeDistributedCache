@@ -52,6 +52,11 @@ namespace RegenerativeDistributedCache.Internals
             return value == null ? null : TimestampedCacheValue.FromString(value);
         }
 
+        public void RemoveLocal(string key)
+        {
+            _cache.RemoveLocal(key);
+        }
+
         public void Dispose()
         {
             _cache?.Dispose();

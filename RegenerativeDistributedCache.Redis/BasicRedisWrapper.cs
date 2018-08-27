@@ -60,7 +60,6 @@ namespace RegenerativeDistributedCache.Redis
 
         public BasicRedisWrapper(ConnectionMultiplexer redisConnectionMultiplexer)
         {
-            // var redisConnectionMultiplexer = ConnectionMultiplexer.Connect(redisConfiguration);
             var redisMultiplexers = new List<ConnectionMultiplexer> { redisConnectionMultiplexer, };
 
             _redisDistributedLockFactory = new RedisDistributedLockFactory(

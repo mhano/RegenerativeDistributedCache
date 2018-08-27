@@ -118,6 +118,12 @@ namespace RegenerativeDistributedCache
             return null;
         }
 
+        public void RemoveLocal(string key)
+        {
+            _traceWriter?.Write($"{nameof(MemoryFrontedExternalCache)}: {nameof(RemoveLocal)}: {key}", ConsoleColor.White, ConsoleColor.DarkRed);
+            _memoryCache.Remove(key);
+        }
+
         public void Dispose()
         {
             _memoryCache?.Dispose();
