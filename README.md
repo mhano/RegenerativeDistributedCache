@@ -66,7 +66,7 @@ _remoteBus.SubscribeTMessage(m => _singletonCorrelatedAwaitManager.NotifyAwaiter
 using(var correlatedAwaiter = _correlatedAwaitManager.CreateAwaiter(key))
 {
     return await correlatedAwaiter.Task.ConfigureAwait(false);
-	// or return correlatedAwaiter.Task.Result;
+    // or return correlatedAwaiter.Task.Result;
 }
 ```
 
