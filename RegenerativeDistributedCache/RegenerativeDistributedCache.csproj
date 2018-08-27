@@ -50,10 +50,10 @@
     <Compile Include="CorrelatedAwaitManager.cs" />
     <Compile Include="Internals\CreationTimestampedCache.cs" />
     <Compile Include="Interfaces\IDistributedLockFactory.cs" />
-    <Compile Include="Interfaces\IFanoutBus.cs" />
+    <Compile Include="Interfaces\IFanOutBus.cs" />
     <Compile Include="Interfaces\IExternalCache.cs" />
     <Compile Include="MemoryFrontedExternalCache.cs" />
-    <Compile Include="RegenerativeDistributedCache.cs" />
+    <Compile Include="RegenerativeCacheManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ScheduledTriggerManager.cs" />
     <Compile Include="SimpleHelpers\NamedLock.cs" />

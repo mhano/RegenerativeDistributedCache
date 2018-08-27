@@ -1,6 +1,6 @@
-#region *   License     *
+﻿#region *   License     *
 /*
-    RegenerativeDistributedCache
+    RegenerativeDistributedCache.Redis
 
     Copyright (c) 2018 Mhano Harkness
 
@@ -28,13 +28,34 @@
 #endregion
 
 using System;
-using System.Threading.Tasks;
+using RegenerativeDistributedCache.Interfaces;
+using StackExchange.Redis;
 
-namespace RegenerativeDistributedCache.Interfaces
+namespace RegenerativeDistributedCache.Redis
 {
-    public interface ICorrelatedAwaiter<TMessage> : IDisposable
+    public class RedisExternalCache : IExternalCache
     {
-        void Cancel();
-        Task<TMessage> Task { get; }
+        private readonly IDatabase _redisDatabase;
+
+        public RedisExternalCache(IDatabase redisDatabase)
+        {
+            _redisDatabase = redisDatabase;
+        }
+
+        public void StringSet(string key, string val, TimeSpan absoluteExpiration)
+        {
+            _redisDatabase.StringSet(key, val, absoluteExpiration);
+        }
+
+        public string StringGetWithExpiry(string key, out TimeSpan expiry)
+        {
+            var result = _redisDatabase.StringGetWithExpiry(key);
+            var validResult = result.Value.HasValue && result.Expiry.HasValue;
+
+            expiry = validResult ? result.Expiry.Value : TimeSpan.MaxValue;
+            var value = validResult ? (string)result.Value : null;
+
+            return value;
+        }
     }
 }

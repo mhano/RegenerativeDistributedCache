@@ -1,6 +1,6 @@
-#region *   License     *
+﻿#region *   License     *
 /*
-    RegenerativeDistributedCache
+    RegenerativeDistributedCache.Redis
 
     Copyright (c) 2018 Mhano Harkness
 
@@ -28,13 +28,30 @@
 #endregion
 
 using System;
-using System.Threading.Tasks;
+using RedLockNet.SERedis;
+using RegenerativeDistributedCache.Interfaces;
 
-namespace RegenerativeDistributedCache.Interfaces
+namespace RegenerativeDistributedCache.Redis
 {
-    public interface ICorrelatedAwaiter<TMessage> : IDisposable
+    public class RedisDistributedLockFactory : IDistributedLockFactory, IDisposable
     {
-        void Cancel();
-        Task<TMessage> Task { get; }
+        private readonly RedLockFactory _redLockFactory;
+
+        public RedisDistributedLockFactory(RedLockFactory redLockFactory)
+        {
+            _redLockFactory = redLockFactory;
+        }
+
+        public IDisposable CreateLock(string lockKey, TimeSpan lockExpiryTime)
+        {
+            var redLock = _redLockFactory.CreateLock(lockKey, lockExpiryTime);
+
+            return redLock.IsAcquired ? redLock : null;
+        }
+
+        public void Dispose()
+        {
+            _redLockFactory?.Dispose();
+        }
     }
 }

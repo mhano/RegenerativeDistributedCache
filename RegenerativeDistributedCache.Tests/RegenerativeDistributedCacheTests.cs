@@ -31,8 +31,8 @@ namespace RegenerativeDistributedCache.Tests
             var testRunKeyspace = $"{Guid.NewGuid():N}";
 
             var tw = new TraceWriter();
-            using (var externals = new RedisCacheLocksAndBusMock())
-            using (var cache = new RegenerativeCacheManager(testRunKeyspace, externals, externals, externals, tw)
+            using (var ext = new RedisIntercept())
+            using (var cache = new RegenerativeCacheManager(testRunKeyspace, ext.Cache, ext.Lock, ext.Bus, tw)
             {
                 CacheExpiryToleranceSeconds = 1,
                 MinimumForwardSchedulingSeconds = 1,
@@ -47,25 +47,25 @@ namespace RegenerativeDistributedCache.Tests
                 Assert.StartsWith("t1_", result1);
                 Assert.Equal(result1, result2);
 
-                Assert.Single(externals.CacheGets);
-                Assert.Single(externals.CacheSets);
-                Assert.Single(externals.Subscribes);
-                Assert.Single(externals.Publishes);
-                Assert.Single(externals.ReceivedMessages);
-                Assert.Single(externals.LockAttempts);
-                Assert.Single(externals.LockAttempts.Where(l => l.Value));
+                Assert.Single(ext.CacheGets);
+                Assert.Single(ext.CacheSets);
+                Assert.Single(ext.Subscribes);
+                Assert.Single(ext.Publishes);
+                Assert.Single(ext.ReceivedMessages);
+                Assert.Single(ext.LockAttempts);
+                Assert.Single(ext.LockAttempts.Where(l => l.Value));
 
                 Thread.Sleep(2500);
 
                 // confirm cache has been regenerated in the background
-                Assert.Single(externals.CacheGets);
-                Assert.Equal(2, externals.CacheSets.Count);
+                Assert.Single(ext.CacheGets);
+                Assert.Equal(2, ext.CacheSets.Count);
 
-                Assert.Single(externals.Subscribes);
-                Assert.Equal(2, externals.Publishes.Count);
-                Assert.Equal(2, externals.ReceivedMessages.Count);
-                Assert.Equal(2, externals.LockAttempts.Count);
-                Assert.Equal(2, externals.LockAttempts.Count(l => l.Value));
+                Assert.Single(ext.Subscribes);
+                Assert.Equal(2, ext.Publishes.Count);
+                Assert.Equal(2, ext.ReceivedMessages.Count);
+                Assert.Equal(2, ext.LockAttempts.Count);
+                Assert.Equal(2, ext.LockAttempts.Count(l => l.Value));
                 
                 var result3 = cache.GetOrAdd("test1", () => $"t2_{Guid.NewGuid():N}", inactiveRetention, regenerationInterval);
                 var result4 = cache.GetOrAdd("test1", () => $"t2_{Guid.NewGuid():N}", inactiveRetention, regenerationInterval);
@@ -95,15 +95,15 @@ namespace RegenerativeDistributedCache.Tests
             var testRunKeyspace = $"{Guid.NewGuid():N}";
 
             var tw = new TraceWriter();
-            using (var node1Externals = new RedisCacheLocksAndBusMock())
-            using (var node1Cache = new RegenerativeCacheManager(testRunKeyspace, node1Externals, node1Externals, node1Externals, tw)
+            using (var node1Ext = new RedisIntercept())
+            using (var node1Cache = new RegenerativeCacheManager(testRunKeyspace, node1Ext.Cache, node1Ext.Lock, node1Ext.Bus, tw)
             {
                 CacheExpiryToleranceSeconds = 1,
                 MinimumForwardSchedulingSeconds = 1,
                 TriggerDelaySeconds = 1,
             })
-            using (var node2Externals = new RedisCacheLocksAndBusMock())
-            using (var node2Cache = new RegenerativeCacheManager(testRunKeyspace, node2Externals, node2Externals, node2Externals, tw)
+            using (var node2Ext = new RedisIntercept())
+            using (var node2Cache = new RegenerativeCacheManager(testRunKeyspace, node2Ext.Cache, node2Ext.Lock, node2Ext.Bus, tw)
             {
                 CacheExpiryToleranceSeconds = 1,
                 MinimumForwardSchedulingSeconds = 1,
@@ -119,40 +119,40 @@ namespace RegenerativeDistributedCache.Tests
                 Assert.StartsWith("t1n1_", node1Result1);
                 Assert.Equal(node1Result1, node1Result2);
 
-                Assert.Single(node1Externals.CacheGets);
-                Assert.Single(node1Externals.CacheSets);
-                Assert.Single(node1Externals.Subscribes);
-                Assert.Single(node1Externals.Publishes);
-                Assert.Single(node1Externals.ReceivedMessages);
-                Assert.Single(node1Externals.LockAttempts);
-                Assert.Single(node1Externals.LockAttempts.Where(l => l.Value));
+                Assert.Single(node1Ext.CacheGets);
+                Assert.Single(node1Ext.CacheSets);
+                Assert.Single(node1Ext.Subscribes);
+                Assert.Single(node1Ext.Publishes);
+                Assert.Single(node1Ext.ReceivedMessages);
+                Assert.Single(node1Ext.LockAttempts);
+                Assert.Single(node1Ext.LockAttempts.Where(l => l.Value));
 
-                Assert.Empty(node2Externals.CacheGets);
-                Assert.Empty(node2Externals.CacheSets);
-                Assert.Single(node2Externals.Subscribes);
-                Assert.Empty(node2Externals.Publishes);
-                Assert.Single(node2Externals.ReceivedMessages);
-                Assert.Empty(node2Externals.LockAttempts);
+                Assert.Empty(node2Ext.CacheGets);
+                Assert.Empty(node2Ext.CacheSets);
+                Assert.Single(node2Ext.Subscribes);
+                Assert.Empty(node2Ext.Publishes);
+                Assert.Single(node2Ext.ReceivedMessages);
+                Assert.Empty(node2Ext.LockAttempts);
 
                 var node2Result1 = node2Cache.GetOrAdd("test1", () => MockGenDelay($"t1n2_{Guid.NewGuid():N}"), inactiveRetention, regenerationInterval);
                 var node2Result2 = node2Cache.GetOrAdd("test1", () => MockGenDelay($"t1n2_{Guid.NewGuid():N}"), inactiveRetention, regenerationInterval);
 
                 // tw.GetOutput().ToList().ForEach(t => output.WriteLine(t));
 
-                Assert.Single(node1Externals.CacheGets);
-                Assert.Single(node1Externals.CacheSets);
-                Assert.Single(node1Externals.Subscribes);
-                Assert.Single(node1Externals.Publishes);
-                Assert.Single(node1Externals.ReceivedMessages);
-                Assert.Single(node1Externals.LockAttempts);
-                Assert.Single(node1Externals.LockAttempts.Where(l => l.Value));
+                Assert.Single(node1Ext.CacheGets);
+                Assert.Single(node1Ext.CacheSets);
+                Assert.Single(node1Ext.Subscribes);
+                Assert.Single(node1Ext.Publishes);
+                Assert.Single(node1Ext.ReceivedMessages);
+                Assert.Single(node1Ext.LockAttempts);
+                Assert.Single(node1Ext.LockAttempts.Where(l => l.Value));
 
-                Assert.Single(node2Externals.CacheGets);
-                Assert.Empty(node2Externals.CacheSets);
-                Assert.Single(node2Externals.Subscribes);
-                Assert.Empty(node2Externals.Publishes);
-                Assert.Single(node2Externals.ReceivedMessages);
-                Assert.Empty(node2Externals.LockAttempts);
+                Assert.Single(node2Ext.CacheGets);
+                Assert.Empty(node2Ext.CacheSets);
+                Assert.Single(node2Ext.Subscribes);
+                Assert.Empty(node2Ext.Publishes);
+                Assert.Single(node2Ext.ReceivedMessages);
+                Assert.Empty(node2Ext.LockAttempts);
 
                 // confirm node2 gets result generated on node1 from external cache
                 Assert.StartsWith("t1n1_", node2Result1);
@@ -162,28 +162,28 @@ namespace RegenerativeDistributedCache.Tests
 
                 // confirm cache has been regenerated in the background (on both nodes)
 
-                Assert.Single(node1Externals.CacheGets);
+                Assert.Single(node1Ext.CacheGets);
 
                 // one set from initial and one from regeneration (across farm)
-                Assert.Equal(2, node1Externals.CacheSets.Union(node2Externals.CacheSets).Count());
+                Assert.Equal(2, node1Ext.CacheSets.Union(node2Ext.CacheSets).Count());
 
-                Assert.Single(node1Externals.Subscribes);
-                Assert.Equal(2, node1Externals.Publishes.Count + node2Externals.Publishes.Count);
-                Assert.Equal(2, node1Externals.ReceivedMessages.Count);
-                Assert.Equal(2, node2Externals.ReceivedMessages.Count);
-                Assert.Equal(2, node1Externals.LockAttempts.Count);
+                Assert.Single(node1Ext.Subscribes);
+                Assert.Equal(2, node1Ext.Publishes.Count + node2Ext.Publishes.Count);
+                Assert.Equal(2, node1Ext.ReceivedMessages.Count);
+                Assert.Equal(2, node2Ext.ReceivedMessages.Count);
+                Assert.Equal(2, node1Ext.LockAttempts.Count);
 
                 // two successful locks across the farm (initial generation + 1 regeneration)
-                Assert.Equal(2, node1Externals.LockAttempts.Count(l => l.Value) + node2Externals.LockAttempts.Count(l => l.Value));
+                Assert.Equal(2, node1Ext.LockAttempts.Count(l => l.Value) + node2Ext.LockAttempts.Count(l => l.Value));
 
-                Assert.Single(node2Externals.CacheGets);
+                Assert.Single(node2Ext.CacheGets);
                 // confirm first hit to node2 returns val from node1
-                Assert.Single(node2Externals.CacheGets.Where(c => c.Value.Contains("t1n1_")));
-                Assert.Single(node2Externals.Subscribes);
+                Assert.Single(node2Ext.CacheGets.Where(c => c.Value.Contains("t1n1_")));
+                Assert.Single(node2Ext.Subscribes);
 
                 // initial generation + 1 re-generation per node
-                Assert.Equal(2, node1Externals.ReceivedMessages.Count);
-                Assert.Equal(2, node2Externals.ReceivedMessages.Count);
+                Assert.Equal(2, node1Ext.ReceivedMessages.Count);
+                Assert.Equal(2, node2Ext.ReceivedMessages.Count);
 
                 var node1Result3 = node1Cache.GetOrAdd("test1", () => MockGenDelay($"t2n1_{Guid.NewGuid():N}"), inactiveRetention, regenerationInterval);
                 var node1Result4 = node1Cache.GetOrAdd("test1", () => MockGenDelay($"t2n1_{Guid.NewGuid():N}"), inactiveRetention, regenerationInterval);

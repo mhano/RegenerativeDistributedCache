@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("RegenerativeDistributedCache")]
-[assembly: AssemblyDescription(@"RegenerativeDistributedCache
+[assembly: AssemblyTitle("RegenerativeDistributedCache.Redis")]
+[assembly: AssemblyDescription(@"RegenerativeDistributedCache.Redis
 
-Provides a cache that supports scheduling the regeneration of cache items ahead
-of their expiry (and to manage this across a farm of web/service nodes).
+Provides basic wrappers around stackExchange redis and RedLock.net redis
+classes for locking, caching and messaging.
 
 Copyright (c) 2018 Mhano Harkness
 
@@ -36,7 +36,7 @@ Website: https://github.com/mhano/RegenerativeDistributedCache")]
 
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Mhano Harkness")]
-[assembly: AssemblyProduct("RegenerativeDistributedCache")]
+[assembly: AssemblyProduct("RegenerativeDistributedCache.Redis")]
 [assembly: AssemblyCopyright("Copyright © Mhano Harkness 2018")]
 [assembly: AssemblyTrademark(@"Copyright (c) 2018 Mhano Harkness
 
@@ -68,7 +68,7 @@ Website: https://github.com/mhano/RegenerativeDistributedCache")]
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("49f7b8f8-3b1b-49f3-b9de-64c3a85ae560")]
+[assembly: Guid("75ed6b80-d619-4c69-b860-20502c0e3265")]
 
 // Version information for an assembly consists of the following four values:
 //

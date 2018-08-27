@@ -1,6 +1,6 @@
-#region *   License     *
+﻿#region *   License     *
 /*
-    RegenerativeDistributedCache
+    RegenerativeDistributedCache.Redis
 
     Copyright (c) 2018 Mhano Harkness
 
@@ -28,13 +28,28 @@
 #endregion
 
 using System;
-using System.Threading.Tasks;
+using RegenerativeDistributedCache.Interfaces;
+using StackExchange.Redis;
 
-namespace RegenerativeDistributedCache.Interfaces
+namespace RegenerativeDistributedCache.Redis
 {
-    public interface ICorrelatedAwaiter<TMessage> : IDisposable
+    public class RedisFanOutBus : IFanOutBus
     {
-        void Cancel();
-        Task<TMessage> Task { get; }
+        private readonly ISubscriber _redisSubscriber;
+
+        public RedisFanOutBus(ISubscriber redisSubscriber)
+        {
+            _redisSubscriber = redisSubscriber;
+        }
+
+        public void Subscribe(string topicKey, Action<string> messageReceive)
+        {
+            _redisSubscriber.Subscribe(topicKey, (ch, value) => messageReceive(value));
+        }
+
+        public void Publish(string topicKey, string value)
+        {
+            _redisSubscriber.Publish(topicKey, value);
+        }
     }
 }

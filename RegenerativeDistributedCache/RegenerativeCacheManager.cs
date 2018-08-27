@@ -1,13 +1,33 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Globalization;
-using System.Linq;
-using System.Runtime.Caching;
-using System.Text;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
+﻿#region *   License     *
+/*
+    RegenerativeDistributedCache - RegenerativeCacheManager
+
+    Copyright (c) 2018 Mhano Harkness
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+
+    License: http://www.opensource.org/licenses/mit-license.php
+    Website: https://github.com/mhano/RegenerativeDistributedCache
+ */
+#endregion
+
+using System;
 using RegenerativeDistributedCache.Interfaces;
 using RegenerativeDistributedCache.Internals;
 using RegenerativeDistributedCache.SimpleHelpers;
@@ -15,6 +35,9 @@ using RegenerativeDistributedCache.SimpleHelpers;
 namespace RegenerativeDistributedCache
 {
     /// <summary>
+    /// Provides a cache that supports scheduling the regeneration of cache items ahead
+    /// of their expiry(and to manage this across a farm of web/service nodes).
+    /// 
     /// Note this class should be used as a singleton (create a single static / shared instance) within your purpose (i.e.
     /// a singleton within a IOC container or a static).
     /// You may cache multiple types of things in one of these caches, but you must prefix your cache keys to distinguish.
@@ -27,7 +50,7 @@ namespace RegenerativeDistributedCache
 
         private readonly string _keyspace;
         private readonly IDistributedLockFactory _distributedLockFactory;
-        private readonly IFanoutBus _fanoutBus;
+        private readonly IFanOutBus _fanOutBus;
 
         private readonly string _lockKeyPrefixGlobalRegenerate;
         private readonly string _pubSubTopicGenerationCompletedEvent;
@@ -41,7 +64,7 @@ namespace RegenerativeDistributedCache
         /// Amount of time after regeneration interval to tollerate old cached values - depends on variability of time required to re-generate content.
         /// For example a cache might be regenerated every minute but values kept in cache (memory or redis) will be used for up to two minutes
         /// </summary>
-        public int CacheExpiryToleranceSeconds { get; set; } = 5;
+        public int CacheExpiryToleranceSeconds { get; set; } = 30;
 
         /// <summary>
         /// Minimum amount of time in the future to schedule regeneration - typically a few seconds.
@@ -70,13 +93,13 @@ namespace RegenerativeDistributedCache
         /// </param>
         /// <param name="externalCache">External cache (such as redis)</param>
         /// <param name="distributedLockFactory">External distributed lock mechanism (such as RedLock on top of redis)</param>
-        /// <param name="fanoutBus">External pub/sub fan out non-durable messaging mechanism (such as Redis or RabbitMq)</param>
+        /// <param name="fanOutBus">External pub/sub fan out non-durable messaging mechanism (such as Redis or RabbitMq)</param>
         /// <param name="traceWriter">Supply to capture detailed tracing/diagnostic information (cache hit/miss get/puts, scheduling, locking and messaging)</param>
-        public RegenerativeCacheManager(string keyspace, IExternalCache externalCache, IDistributedLockFactory distributedLockFactory, IFanoutBus fanoutBus, ITraceWriter traceWriter = null)
+        public RegenerativeCacheManager(string keyspace, IExternalCache externalCache, IDistributedLockFactory distributedLockFactory, IFanOutBus fanOutBus, ITraceWriter traceWriter = null)
         {
             _keyspace = keyspace;
             _distributedLockFactory = distributedLockFactory;
-            _fanoutBus = fanoutBus;
+            _fanOutBus = fanOutBus;
             _traceWriter = traceWriter;
 
             _underlyingCache = new CreationTimestampedCache(_keyspace, externalCache, traceWriter);
@@ -95,10 +118,10 @@ namespace RegenerativeDistributedCache
 
             _correlatedAwaitManager = new CorrelatedAwaitManager<ResultNotication, string>(v => v.Key, traceWriter);
 
-            _fanoutBus.Subscribe(_pubSubTopicGenerationCompletedEvent,
+            _fanOutBus.Subscribe(_pubSubTopicGenerationCompletedEvent,
                 (value) =>
                 {
-                    _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(_fanoutBus)}.{nameof(_fanoutBus.Subscribe)}.Action: Notify Awaiters from Remote message: {value}", ConsoleColor.Yellow);
+                    _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(_fanOutBus)}.{nameof(_fanOutBus.Subscribe)}.Action: Notify Awaiters from Remote message: {value}", ConsoleColor.Yellow);
 
                     // Exception caught to protect subscriber
                     try
@@ -111,12 +134,24 @@ namespace RegenerativeDistributedCache
                     catch (Exception ex)
                     {
                         // TODO: log error/exception details
-                        _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(_fanoutBus)}.{nameof(_fanoutBus.Subscribe)}.Action: ERROR receiving message, could not deserialize message as ResultNotication, message: {value}, exception: {ex}", ConsoleColor.White, ConsoleColor.Red);
+                        _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(_fanOutBus)}.{nameof(_fanOutBus.Subscribe)}.Action: ERROR receiving message, could not deserialize message as ResultNotication, message: {value}, exception: {ex}", ConsoleColor.White, ConsoleColor.Red);
                     }
                 }
             );
         }
 
+        /// <summary>
+        /// Get existing value from local memory cache, or external cache, or generate from scratch.
+        /// Ensures a scheduled regeneration (generateFunc) is happening on this node (though only one node
+        /// in a farm will obtain a lock to perform the regeneration of the cache value).
+        /// Future scheduled regenerations update the network/external cache with new values which are
+        /// then copied to local memory caches on nodes on requests for the item (future calls to GetOrAdd).
+        /// </summary>
+        /// <param name="key">A key within the context of a singleton of RegenerativeCacheManager</param>
+        /// <param name="generateFunc">A callback action to generate the content if missing from cache or as re-generation occurs in future</param>
+        /// <param name="maxInactiveRetention">Total amount of time to keep re-generating the cache value</param>
+        /// <param name="regenerationInterval">Frequency at which cached values is regenerated</param>
+        /// <returns></returns>
         public string GetOrAdd(string key, Func<string> generateFunc, TimeSpan maxInactiveRetention, TimeSpan regenerationInterval)
         {
             TimestampedCacheValue cacheResult = null;
@@ -249,7 +284,7 @@ namespace RegenerativeDistributedCache
 
                             // trigger publish of redis fan out message to notify awaiters (also something needs to setup _correlatedAwaitManager to consume)
                             _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(RegenerateIfNotUnderway)}: TraceId:{traceId:N}: Publish to Remote Awaiters: {key}", ConsoleColor.White);
-                            _fanoutBus.Publish(_pubSubTopicGenerationCompletedEvent, notificationMsg.ToString());
+                            _fanOutBus.Publish(_pubSubTopicGenerationCompletedEvent, notificationMsg.ToString());
                             _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(RegenerateIfNotUnderway)}: TraceId:{traceId:N}: Published to Remote Awaiters: {key}", ConsoleColor.White);
 
                             if (DateTime.UtcNow.Subtract(start) > regenerationInterval)

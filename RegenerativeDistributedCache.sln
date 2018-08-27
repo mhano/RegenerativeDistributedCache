@@ -7,6 +7,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RegenerativeDistributedCach
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RegenerativeDistributedCache.Tests", "RegenerativeDistributedCache.Tests\RegenerativeDistributedCache.Tests.csproj", "{417146F0-8FE7-46BD-96C3-9A254ACC34E2}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionItems", "SolutionItems", "{F4918DC2-2BAC-4003-BEC9-9CC7DA594343}"
+	ProjectSection(SolutionItems) = preProject
+		LICENSE = LICENSE
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RegenerativeDistributedCache.Redis", "RegenerativeDistributedCache.Redis\RegenerativeDistributedCache.Redis.csproj", "{75ED6B80-D619-4C69-B860-20502C0E3265}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +29,10 @@ Global
 		{417146F0-8FE7-46BD-96C3-9A254ACC34E2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{417146F0-8FE7-46BD-96C3-9A254ACC34E2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{417146F0-8FE7-46BD-96C3-9A254ACC34E2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{75ED6B80-D619-4C69-B860-20502C0E3265}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{75ED6B80-D619-4C69-B860-20502C0E3265}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{75ED6B80-D619-4C69-B860-20502C0E3265}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{75ED6B80-D619-4C69-B860-20502C0E3265}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
