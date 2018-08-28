@@ -88,16 +88,19 @@ _remoteBus.Subscribe<TMessage>(m => _singletonCorrelatedAwaitManager.NotifyAwait
 
 ```C#
 // CAUTION awaiter must be disposed or cancelled (awaiter.Cancel())
+TMessage message;
+
 using(var awaiter = _correlatedAwaitManager.CreateAwaiter(key))
 {
     // Note you must be certain that the message is being sent after the
     // awaiter has been created (or you could end up waiting forever / timing out).
     
-    // The below or: var message = awaiter.Task.Result;
+    // The below or: message = awaiter.Task.Result;
     // or awaiter.Task.Wait(timeOut);
-    var message = await awaiter.Task.ConfigureAwait(false);
-    return DoSomething(message);
+    message = await awaiter.Task.ConfigureAwait(false);
 }
+
+return DoSomething(message);
 ```
 
 ## MemoryFrontedExternalCache
