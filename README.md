@@ -110,20 +110,31 @@ _remoteBus.Subscribe<TMessage>(m => _singletonCorrelatedAwaitManager.NotifyAwait
 ### Use:
 
 ```C#
-// CAUTION awaiter must be disposed or cancelled (awaiter.Cancel())
-TMessage message;
+TMessage message; // the awaited notification message type.
+TSomething result;
 
+if((result = GetSomething(key)) != null) return result;
+
+// CAUTION awaiter must be disposed or cancelled (awaiter.Cancel())
 using(var awaiter = _correlatedAwaitManager.CreateAwaiter(key))
 {
-    // Note you must be certain that the message is being sent after the
-    // awaiter has been created (or you could end up waiting forever / timing out).
-    
-    // The below or: message = awaiter.Task.Result;
-    // or awaiter.Task.Wait(timeOut);
-    message = await awaiter.Task.ConfigureAwait(false);
+	// Note you must be certain that the message is being sent after the
+	// awaiter has been created (or you could end up waiting forever / timing out).
+
+	// Often this involves a second test as to whether some result became
+	// available just now (some time before/after awaiter creation), therefore
+	// we should double check it's not available as the notification about it
+	// may have been sent before we setup the awaiter.
+
+	if((result = GetSomething(key)) != null) return result;
+
+	// The below or: message = awaiter.Task.Result;
+	// or awaiter.Task.Wait(timeOut);
+	message = await awaiter.Task.ConfigureAwait(false);
 }
 
-return DoSomething(message);
+// as we have awaited the awaiter we now know the result is available.
+return GetSomething(key);
 ```
 
 ## MemoryFrontedExternalCache
