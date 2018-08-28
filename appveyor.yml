@@ -40,7 +40,7 @@ for:
   configuration: Release
   
   deploy:
-    providerprovider: NuGet
+    provider: NuGet
     api_key:
       secure: Z6p8drICTxdQrd2FcCJfX0D0NdWdPLklJ8ELOhrHprK+b7qXsPYvOupSdI+vzoyd
     skip_symbols: false
