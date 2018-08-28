@@ -9,6 +9,20 @@ mechanism (all three of these can be provided by Redis or you might use alternat
 more of these such as RabbitMq for messaging). Basic redis implementations of these are provided
 in RegenerativeCacheManager.Redis.
 
+## RegenerativeDistributedCache.Redis
+
+Basic redis backed implementations of the interfaces in RegenerativeDistributedCache.Interfaces for 
+an external (network) cache, a fan out pub/sub message bus, and a distributed locking mechanism for
+use with RegenerativeDistributedCache.RegenerativeCacheManager.
+
+Use a combination of RedisExternalCache, RedisDistributedLockFactory and RedisFanoutBus connected
+to your existing wiring / configuration redis/redlock or replace components as needed (such as 
+implementing a RabbitMq or MassTransit based IFanOutBus instead of RedisFanOutBus).
+
+CAUTION - The BasicRedisWrapper wraps up the creation of all three (either based on a single redis 
+connection, or a redis connection per concern [caching/locking/messaging]) but performs some pretty
+basic implemention in regards to connecting to redis, you will want to review the approach carefully
+prior to using.
 
 ## RegenerativeCacheManager
 

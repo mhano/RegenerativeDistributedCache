@@ -6,7 +6,10 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("RegenerativeDistributedCache")]
-[assembly: AssemblyDescription(@"A cache that supports scheduling the regeneration of cache items in the background ahead of their expiry and manages this across a farm of web/service nodes minimising duplicated cache value generation work.")]
+[assembly: AssemblyDescription(
+@"A cache that supports scheduling the regeneration of cache items in the background ahead of their
+expiry and manages this across a farm of web/service nodes minimising duplicated cache value 
+generation work.")]
 
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Mhano Harkness")]
