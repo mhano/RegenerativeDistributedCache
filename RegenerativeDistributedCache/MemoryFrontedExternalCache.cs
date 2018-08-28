@@ -70,39 +70,39 @@ namespace RegenerativeDistributedCache
         {
             StoreLocalMemory(key, val, absoluteExpiration);
 
-            _traceWriter?.Write($"{nameof(MemoryFrontedExternalCache)}: {nameof(Set)}: {nameof(_externalCache)}.{nameof(_externalCache.StringSet)}(key: {key}, ttl: {absoluteExpiration.TotalSeconds});", ConsoleColor.Magenta);
+            _traceWriter?.Write($"{nameof(MemoryFrontedExternalCache)}: {nameof(Set)}: {nameof(_externalCache)}.{nameof(_externalCache.StringSet)}(key: {key}, ttl: {absoluteExpiration.TotalSeconds});");
 
             _externalCache.StringSet($"{_cacheKeyPrefixItem}{key}", val, absoluteExpiration);
         }
 
         private void StoreLocalMemory(string key, string val, TimeSpan absoluteExpiration)
         {
-            _traceWriter?.Write($"{nameof(MemoryFrontedExternalCache)}: {nameof(StoreLocalMemory)}: {nameof(_memoryCache)}.{nameof(_memoryCache.Set)}(key: {key}, ttl: {DateTimeOffset.UtcNow.Add(absoluteExpiration)});", ConsoleColor.Magenta);
+            _traceWriter?.Write($"{nameof(MemoryFrontedExternalCache)}: {nameof(StoreLocalMemory)}: {nameof(_memoryCache)}.{nameof(_memoryCache.Set)}(key: {key}, ttl: {DateTimeOffset.UtcNow.Add(absoluteExpiration)});");
             _memoryCache.Set(key, val, DateTimeOffset.UtcNow.Add(absoluteExpiration));
         }
 
         public string Get(string key)
         {
             var cacheVal = _memoryCache.Get(key);
-            // if (cacheVal != null) SynchedConsole.WriteLine($"From Local Cache 1: {key}, val: {cacheVal}", ConsoleColor.White, ConsoleColor.DarkGreen);
+            _traceWriter?.Write($"From Local Cache 1: {key}, val length: {((string)cacheVal)?.Length ?? -1}");
             if (cacheVal != null) return (string)cacheVal;
 
             // not a perfect named lock but synchronises multiple incomming calls and prevents secondary / concurrent calls
             // to redis.get until the first, then after the redis retrieval is stored temporarily in memory (for 5 seconds)
             // subsoquent calls all get the result from memory (and ultimately fall back to redis if it expires)
-            _traceWriter?.Write($"{nameof(MemoryFrontedExternalCache)}: {nameof(Get)}: Locking local: {_lockKeyPrefixExternalRetrieve}{key}", ConsoleColor.White, ConsoleColor.DarkRed);
+            _traceWriter?.Write($"{nameof(MemoryFrontedExternalCache)}: {nameof(Get)}: Locking local: {_lockKeyPrefixExternalRetrieve}{key}");
             var start = DateTime.Now;
             using (NamedLock.CreateAndEnter($"{_lockKeyPrefixExternalRetrieve}{key}"))
             {
-                _traceWriter?.Write($"{nameof(MemoryFrontedExternalCache)}: {nameof(Get)}: Locked: {_lockKeyPrefixExternalRetrieve}{key} in {DateTime.Now.Subtract(start).TotalMilliseconds * 1000:#,##0.0}us", ConsoleColor.White, ConsoleColor.DarkRed);
+                _traceWriter?.Write($"{nameof(MemoryFrontedExternalCache)}: {nameof(Get)}: Locked: {_lockKeyPrefixExternalRetrieve}{key} in {DateTime.Now.Subtract(start).TotalMilliseconds * 1000:#,##0.0}us");
                 cacheVal = _memoryCache.Get(key);
-                // if (cacheVal != null) SynchedConsole.WriteLine($"From Local Cache 2: {key}, val: {cacheVal}", ConsoleColor.White, ConsoleColor.DarkGreen);
+                _traceWriter?.Write($"From Local Cache 2: {key}, val length: {((string)cacheVal)?.Length ?? -1}");
                 if (cacheVal != null) return (string)cacheVal;
 
                 var timePriorToRedisCall = DateTime.UtcNow;
                 var value = _externalCache.StringGetWithExpiry($"{_cacheKeyPrefixItem}{key}", out var expiry);
 
-                _traceWriter?.Write($"{nameof(MemoryFrontedExternalCache)}: {nameof(Get)}: {nameof(_externalCache)}.{nameof(_externalCache.StringGetWithExpiry)}(key: {key}, out expiry: {expiry}); => result present: {value != null}", ConsoleColor.Yellow);
+                _traceWriter?.Write($"{nameof(MemoryFrontedExternalCache)}: {nameof(Get)}: {nameof(_externalCache)}.{nameof(_externalCache.StringGetWithExpiry)}(key: {key}, out expiry: {expiry}); => result present: {value != null}");
 
                 if (value != null)
                 {
@@ -122,17 +122,15 @@ namespace RegenerativeDistributedCache
         public string GetStringStart(string key, int length)
         {
             var cacheVal = (string)_memoryCache.Get(key);
-            // if (cacheVal != null) SynchedConsole.WriteLine($"From Local Cache 1: {key}, val: {cacheVal}", ConsoleColor.White, ConsoleColor.DarkGreen);
             if (cacheVal != null)
             {
-                _traceWriter?.Write($"{nameof(MemoryFrontedExternalCache)}: {nameof(GetStringStart)}: {nameof(_memoryCache)}.{nameof(_memoryCache.Get)}(key: {key}, length: {length}); => result length {cacheVal.Length}, returning {Math.Min(length, cacheVal.Length)} characters.", ConsoleColor.Magenta);
-
+                _traceWriter?.Write($"{nameof(MemoryFrontedExternalCache)}: {nameof(GetStringStart)}: {nameof(_memoryCache)}.{nameof(_memoryCache.Get)}(key: {key}, length: {length}); => result length {cacheVal?.Length ?? -1}, returning {Math.Min(length, (int)cacheVal?.Length)} characters.");
                 return cacheVal.Substring(0, length);
             }
 
             cacheVal = _externalCache.GetStringStart($"{_cacheKeyPrefixItem}{key}", length);
 
-            _traceWriter?.Write($"{nameof(MemoryFrontedExternalCache)}: {nameof(GetStringStart)}: {nameof(_externalCache)}.{nameof(_externalCache.GetStringStart)}(key: {key}, length: {length}); => result length {cacheVal?.Length ?? -1}, returning {Math.Min(length, cacheVal?.Length ?? -1)} characters (-1 = null).", ConsoleColor.Magenta);
+            _traceWriter?.Write($"{nameof(MemoryFrontedExternalCache)}: {nameof(GetStringStart)}: {nameof(_externalCache)}.{nameof(_externalCache.GetStringStart)}(key: {key}, length: {length}); => result length {cacheVal?.Length ?? -1}, returning {Math.Min(length, cacheVal?.Length ?? -1)} characters.");
 
             return cacheVal;
         }
@@ -141,7 +139,7 @@ namespace RegenerativeDistributedCache
         {
             var removed = _memoryCache.Remove(key);
 
-            _traceWriter?.Write($"{nameof(MemoryFrontedExternalCache)}: {nameof(RemoveLocal)}: {key}, Removed: {removed != null}", ConsoleColor.White, ConsoleColor.DarkRed);
+            _traceWriter?.Write($"{nameof(MemoryFrontedExternalCache)}: {nameof(RemoveLocal)}: {key}, Removed: {removed != null}");
         }
 
         public void Dispose()

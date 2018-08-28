@@ -52,7 +52,7 @@ namespace RegenerativeDistributedCache
             public Action CallBack;
             public TimeSpan MaxInactiveRetention;
             public TimeSpan CallbackInterval;
-            public Guid? TraceId;
+            public string TraceId;
         }
 
         /// <summary>
@@ -71,9 +71,9 @@ namespace RegenerativeDistributedCache
         /// </summary>
         public double TriggerDelaySeconds { get; set; } = 1;
 
-        public void EnsureTriggerScheduled(string key, Action callbackAction, TimeSpan maxInactiveRetention, TimeSpan callbackInterval, DateTime prevCallbackStartTimeUtc, DateTime? lastActive = null, Guid? traceId = null)
+        public void EnsureTriggerScheduled(string key, Action callbackAction, TimeSpan maxInactiveRetention, TimeSpan callbackInterval, DateTime prevCallbackStartTimeUtc, DateTime? lastActive = null, string traceId = null)
         {
-            _traceWriter?.Write($"{nameof(ScheduledTriggerManager)}: {nameof(EnsureTriggerScheduled)}: TraceId:{traceId:N}: Key:{key}");
+            _traceWriter?.Write($"{nameof(ScheduledTriggerManager)}: {nameof(EnsureTriggerScheduled)}: TraceId:{traceId}: Key:{key}");
 
             if (GetCurrentOrRegenerated(key) == null)
             {
@@ -116,20 +116,20 @@ namespace RegenerativeDistributedCache
                     // frequently if there is cpu pressure but not memory pressure).
                     var delay = logicalStartTime.Subtract(DateTime.UtcNow).Add(TimeSpan.FromSeconds(TriggerDelaySeconds));
 
-                    _traceWriter?.Write($"{nameof(ScheduledTriggerManager)}: {nameof(EnsureTriggerScheduled)}: TraceId:{traceId:N}: Schedule Cleanup: Key:{key}, in {delay.TotalSeconds}s", ConsoleColor.Black, ConsoleColor.Green);
+                    _traceWriter?.Write($"{nameof(ScheduledTriggerManager)}: {nameof(EnsureTriggerScheduled)}: TraceId:{traceId}: Schedule Cleanup: Key:{key}, in {delay.TotalSeconds}s");
                     Task.Delay(delay).ContinueWith(t =>
                     {
-                        _traceWriter?.Write($"{nameof(ScheduledTriggerManager)}: {nameof(EnsureTriggerScheduled)}: TraceId:{traceId:N}:  Scheduled Cleanup Executing: Key:{key}", ConsoleColor.Black, ConsoleColor.Green);
+                        _traceWriter?.Write($"{nameof(ScheduledTriggerManager)}: {nameof(EnsureTriggerScheduled)}: TraceId:{traceId}:  Scheduled Cleanup Executing: Key:{key}");
                         ClearIfExpired(key);
                     }).ConfigureAwait(false);
                 }
             }
         }
 
-        public bool UpdateLastActivity(string key, Guid? traceId = null)
+        public bool UpdateLastActivity(string key, string traceId = null)
         {
             var start = DateTime.Now;
-            _traceWriter?.Write($"{nameof(ScheduledTriggerManager)}: {nameof(UpdateLastActivity)}: TraceId:{traceId:N} start", ConsoleColor.Black, ConsoleColor.Green);
+            _traceWriter?.Write($"{nameof(ScheduledTriggerManager)}: {nameof(UpdateLastActivity)}: TraceId:{traceId} start");
             try
             {
                 var triggerInfo = GetCurrentOrRegenerated(key);
@@ -145,7 +145,7 @@ namespace RegenerativeDistributedCache
             }
             finally
             {
-                _traceWriter?.Write($"{nameof(ScheduledTriggerManager)}: {nameof(UpdateLastActivity)}: TraceId:{traceId:N}: Completed in {DateTime.Now.Subtract(start).TotalMilliseconds*1000:#,##0.0}us", ConsoleColor.Black, ConsoleColor.Green);
+                _traceWriter?.Write($"{nameof(ScheduledTriggerManager)}: {nameof(UpdateLastActivity)}: TraceId:{traceId}: Completed in {DateTime.Now.Subtract(start).TotalMilliseconds*1000:#,##0.0}us");
             }
         }
 
@@ -166,7 +166,7 @@ namespace RegenerativeDistributedCache
 
                 if (DateTime.UtcNow < expires)
                 {
-                    _traceWriter?.Write($"{nameof(ScheduledTriggerManager)}: {nameof(ScheduleNextAndInvokeCallBack)}: TraceId:{triggerInfo.TraceId:N}: Re-scheduling: {removeArgs.CacheItem.Key}", ConsoleColor.White, ConsoleColor.DarkMagenta);
+                    _traceWriter?.Write($"{nameof(ScheduledTriggerManager)}: {nameof(ScheduleNextAndInvokeCallBack)}: TraceId:{triggerInfo.TraceId}: Re-scheduling: {removeArgs.CacheItem.Key}");
 
                     // schedule the next callback at ideal start time of current callback start + callbackInterval
                     // we need to specify last active to avoid it being treated as active due to background activity (which would be infinite re-generation in background)
@@ -178,7 +178,7 @@ namespace RegenerativeDistributedCache
                 }
                 else
                 {
-                    _traceWriter?.Write($"{nameof(ScheduledTriggerManager)}: {nameof(ScheduleNextAndInvokeCallBack)}: TraceId:{triggerInfo.TraceId:N}: NOT Re-scheduling: {removeArgs.CacheItem.Key}", ConsoleColor.White, ConsoleColor.DarkMagenta);
+                    _traceWriter?.Write($"{nameof(ScheduledTriggerManager)}: {nameof(ScheduleNextAndInvokeCallBack)}: TraceId:{triggerInfo.TraceId}: NOT Re-scheduling: {removeArgs.CacheItem.Key}");
                 }
             }
         }
