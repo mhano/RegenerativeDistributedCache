@@ -118,7 +118,7 @@
     <Compile Include="RedisFanoutBus.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include=".nuspec" />
+    <None Include="RegenerativeDistributedCache.Redis.nuspec" />
     <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
