@@ -1,12 +1,13 @@
 # RegenerativeDistributedCache
 
-Provides a cache that supports scheduling the regeneration of cache items in the background ahead
-of their expiry (and to manage this across a farm of web/service nodes).
+A cache that supports scheduling the regeneration of cache items in the background ahead of their
+expiry and manages this across a farm of web/service nodes minimising duplicated cache value 
+generation work.
 
 Requires an external (network) cache, a fan out pub/sub message bus, and a distributed locking
 mechanism (all three of these can be provided by Redis or you might use alternatives for one or
 more of these such as RabbitMq for messaging). Basic redis implementations of these are provided
-in RegenerativeCacheManager.Redis
+in RegenerativeCacheManager.Redis.
 
 
 ## RegenerativeCacheManager

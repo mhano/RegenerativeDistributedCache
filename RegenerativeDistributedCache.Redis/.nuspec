@@ -1,0 +1,18 @@
+﻿<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>$id$</id>
+    <version>$version$</version>
+    <title>$title$</title>
+    <authors>$author$</authors>
+    <owners>$author$</owners>
+    <licenseUrl>https://www.opensource.org/licenses/mit-license.php</licenseUrl>
+    <projectUrl>https://github.com/mhano/RegenerativeDistributedCache</projectUrl>
+    <iconUrl>https://raw.githubusercontent.com/mhano/RegenerativeDistributedCache/master/Icon.png</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <copyright>$copyright$</copyright>
+    <description>$description$</description>
+    <summary>Basic redis implementations of an external (network) cache, a fan out pub/sub message bus, and a distributed locking mechanism for use with RegenerativeDistributedCache.RegenerativeCacheManager.</summary>
+    <tags>RegenerativeCacheManager CorrelatedAwaitManager MemoryFrontedExternalCache cache caching farm network distributed message messaging correlated correlate correlating background refresh regenerate regenerative redis rabbitmq pre-emptive</tags>
+  </metadata>
+</package>
