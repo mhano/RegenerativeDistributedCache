@@ -1,0 +1,19 @@
+# version format
+version: 1.0.{build}
+image: Visual Studio 2017
+platform: Any CPU
+configuration: Release
+
+assembly_info:
+  patch: true
+  file: AssemblyInfo.*
+  assembly_version: "1.0.{build}"
+  assembly_file_version: "{version}"
+  assembly_informational_version: "{version}"
+
+build:
+  publish_nuget: true             # package projects with .nuspec files and push to artifacts
+  publish_nuget_symbols: true     # generate and publish NuGet symbol packages
+
+  # MSBuild verbosity level - quiet|minimal|normal|detailed
+  verbosity: normal

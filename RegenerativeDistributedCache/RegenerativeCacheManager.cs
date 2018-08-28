@@ -61,18 +61,11 @@ namespace RegenerativeDistributedCache
         private readonly ScheduledTriggerManager _regenTriggers;
         private readonly CorrelatedAwaitManager<ResultNotication, string> _correlatedAwaitManager;
 
-        private double _farmClockToleranceSeconds = 15;
-        private double _cacheExpiryToleranceSeconds = 30;
-
         /// <summary>
         /// Amount of time after regeneration interval to tollerate old cached values - depends on variability of time required to re-generate content.
         /// For example a cache might be regenerated every minute but values kept in cache (memory or redis) will be used for up to two minutes
         /// </summary>
-        public double CacheExpiryToleranceSeconds
-        {
-            get { return _cacheExpiryToleranceSeconds; }
-            set { _cacheExpiryToleranceSeconds = value; }
-        }
+        public double CacheExpiryToleranceSeconds { get; set; } = 30;
 
         /// <summary>
         /// When checking if cache item should be regenerated, regeneration won't occurr unless within this
@@ -82,11 +75,7 @@ namespace RegenerativeDistributedCache
         /// Note it is expected that the time take to regenerate an item does not exceed regeneration interval less
         /// the farm clock tollerence (if it does you may see unexpected cache misses)
         /// </summary>
-        public double FarmClockToleranceSeconds
-        {
-            get { return _farmClockToleranceSeconds; }
-            set { _farmClockToleranceSeconds = value; }
-        }
+        public double FarmClockToleranceSeconds { get; set; } = 15;
 
         /// <summary>
         /// Minimum amount of time in the future to schedule regeneration - typically a few seconds.
@@ -98,8 +87,8 @@ namespace RegenerativeDistributedCache
         /// </summary>
         public double MinimumForwardSchedulingSeconds
         {
-            get { return _regenTriggers.MinimumForwardSchedulingSeconds; }
-            set { _regenTriggers.MinimumForwardSchedulingSeconds = value; }
+            get => _regenTriggers.MinimumForwardSchedulingSeconds;
+            set => _regenTriggers.MinimumForwardSchedulingSeconds = value;
         }
 
         /// <summary>
@@ -108,8 +97,8 @@ namespace RegenerativeDistributedCache
         /// </summary>
         public double TriggerDelaySeconds
         {
-            get { return _regenTriggers.TriggerDelaySeconds; }
-            set { _regenTriggers.TriggerDelaySeconds = value; }
+            get => _regenTriggers.TriggerDelaySeconds;
+            set => _regenTriggers.TriggerDelaySeconds = value;
         }
 
         /// <summary>
