@@ -61,11 +61,18 @@ namespace RegenerativeDistributedCache
         private readonly ScheduledTriggerManager _regenTriggers;
         private readonly CorrelatedAwaitManager<ResultNotication, string> _correlatedAwaitManager;
 
+        private double _farmClockToleranceSeconds = 15;
+        private double _cacheExpiryToleranceSeconds = 30;
+
         /// <summary>
         /// Amount of time after regeneration interval to tollerate old cached values - depends on variability of time required to re-generate content.
         /// For example a cache might be regenerated every minute but values kept in cache (memory or redis) will be used for up to two minutes
         /// </summary>
-        public double CacheExpiryToleranceSeconds { get; set; } = 30;
+        public double CacheExpiryToleranceSeconds
+        {
+            get { return _cacheExpiryToleranceSeconds; }
+            set { _cacheExpiryToleranceSeconds = value; }
+        }
 
         /// <summary>
         /// When checking if cache item should be regenerated, regeneration won't occurr unless within this
@@ -75,7 +82,11 @@ namespace RegenerativeDistributedCache
         /// Note it is expected that the time take to regenerate an item does not exceed regeneration interval less
         /// the farm clock tollerence (if it does you may see unexpected cache misses)
         /// </summary>
-        public double FarmClockToleranceSeconds { get; set; } = 15;
+        public double FarmClockToleranceSeconds
+        {
+            get { return _farmClockToleranceSeconds; }
+            set { _farmClockToleranceSeconds = value; }
+        }
 
         /// <summary>
         /// Minimum amount of time in the future to schedule regeneration - typically a few seconds.
@@ -85,13 +96,21 @@ namespace RegenerativeDistributedCache
         /// and try to schedule the next re-generation for 60 seconds after the previous generation started (15 seconds in the past), this setting allows that need 
         /// to regenerate to be scheduled for near immediately but not quite.
         /// </summary>
-        public double MinimumForwardSchedulingSeconds { get => _regenTriggers.MinimumForwardSchedulingSeconds; set => _regenTriggers.MinimumForwardSchedulingSeconds = value; }
+        public double MinimumForwardSchedulingSeconds
+        {
+            get { return _regenTriggers.MinimumForwardSchedulingSeconds; }
+            set { _regenTriggers.MinimumForwardSchedulingSeconds = value; }
+        }
 
         /// <summary>
         /// Delay after expiry of trigger to force trigger item to be expired with a get against the trigger - usually 1 second.
         /// Ensures .net memory cache regards the item as expired and triggers the removal and thus setup of next trigger.
         /// </summary>
-        public double TriggerDelaySeconds { get => _regenTriggers.TriggerDelaySeconds; set => _regenTriggers.TriggerDelaySeconds = value; }
+        public double TriggerDelaySeconds
+        {
+            get { return _regenTriggers.TriggerDelaySeconds; }
+            set { _regenTriggers.TriggerDelaySeconds = value; }
+        }
 
         /// <summary>
         /// WARNING, Choosing a keyspace is important.

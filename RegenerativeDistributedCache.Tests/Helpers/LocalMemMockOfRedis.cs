@@ -57,7 +57,7 @@ namespace RegenerativeDistributedCache.Tests.Helpers
 
         public IDisposable CreateLock(string lockKey, TimeSpan lockExpiryTime)
         {
-            var lck = SimpleHelpers.NamedLock.CreateAndEnter($"LocalMemMockOfRedis", 0);
+            var lck = SimpleHelpers.NamedLock.CreateAndEnter($"{nameof(LocalMemMockOfRedis)}:{nameof(CreateLock)}:{lockKey}", 0);
 
             if (lck.IsLocked) return lck;
 
