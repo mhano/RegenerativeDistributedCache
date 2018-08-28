@@ -8,7 +8,7 @@
     <owners>$author$</owners>
     <licenseUrl>https://www.opensource.org/licenses/mit-license.php</licenseUrl>
     <projectUrl>https://github.com/mhano/RegenerativeDistributedCache</projectUrl>
-    <iconUrl>https://raw.githubusercontent.com/mhano/RegenerativeDistributedCache/master/Icon.png</iconUrl>
+    <iconUrl>https://raw.githubusercontent.com/mhano/RegenerativeDistributedCache/master/docs/Icon.png</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <copyright>$copyright$</copyright>
     <description>$description$</description>

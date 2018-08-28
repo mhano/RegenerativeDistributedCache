@@ -1,4 +1,4 @@
-# RegenerativeDistributedCache
+# ![RegenerativeDistributedCache Icon](https://raw.githubusercontent.com/mhano/RegenerativeDistributedCache/master/docs/Icon.png) RegenerativeDistributedCache
 
 A cache that supports scheduling the regeneration of cache items in the background ahead of their
 expiry and manages this across a farm of web/service nodes minimising duplicated cache value 
