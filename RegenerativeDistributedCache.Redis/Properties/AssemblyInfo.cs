@@ -6,10 +6,7 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("RegenerativeDistributedCache.Redis")]
-[assembly: AssemblyDescription(
-@"Basic redis backed implementations of the interfaces in RegenerativeDistributedCache.Interfaces for 
-an external (network) cache, a fan out pub/sub message bus, and a distributed locking mechanism for
-use with RegenerativeDistributedCache.RegenerativeCacheManager.")]
+[assembly: AssemblyDescription(@"Basic redis backed implementations of the interfaces in RegenerativeDistributedCache.Interfaces for an external (network) cache, a fan out pub/sub message bus, and a distributed locking mechanism for use with RegenerativeDistributedCache.RegenerativeCacheManager.")]
 
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Mhano Harkness")]
