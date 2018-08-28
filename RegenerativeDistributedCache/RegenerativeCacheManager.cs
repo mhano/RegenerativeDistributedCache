@@ -22,7 +22,7 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE.
 
-    License: http://www.opensource.org/licenses/mit-license.php
+    License: https://www.opensource.org/licenses/mit-license.php
     Website: https://github.com/mhano/RegenerativeDistributedCache
  */
 #endregion
@@ -267,15 +267,15 @@ namespace RegenerativeDistributedCache
             // an optimisation for some race conditions - like a scheduled cache regeneration is firing off generation
             // at the same time a cache miss is triggering immediate generation.
 
-            TimestampedCacheValue cacheValue;
+            DateTime? creationTimestamp;
 
             // if there is an existing cache value and it is more recent than x seconds from being due for regeneration
             // simply skip regeneration. This helps avoid triggering multiple generations in close race conditions
-            if (isInBackground && (cacheValue = _underlyingCache.Get(key)) != null &&
+            if (isInBackground && (creationTimestamp = _underlyingCache.GetCreationTimestamp(key)) != null &&
                 // item valid up to shortly before it is due to regenerate, thus regenerations fired immediately after others simply skip
-                cacheValue.CreateCommenced.Add(regenerationInterval).Subtract(TimeSpan.FromSeconds(FarmClockToleranceSeconds)) > DateTime.UtcNow)
+                creationTimestamp.Value.Add(regenerationInterval).Subtract(TimeSpan.FromSeconds(FarmClockToleranceSeconds + TriggerDelaySeconds)) > DateTime.UtcNow)
             {
-                _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(RegenerateIfNotUnderway)}: TraceId:{traceId:N}: Key: {key}, Regenerate skipped, not due for regeneration for: {cacheValue.CreateCommenced.Add(regenerationInterval).Subtract(DateTime.UtcNow).TotalMilliseconds*1000:#,###.0}us");
+                _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(RegenerateIfNotUnderway)}: TraceId:{traceId:N}: Key: {key}, Regenerate skipped, not due for regeneration for: {creationTimestamp.Value.Add(regenerationInterval).Subtract(DateTime.UtcNow).TotalMilliseconds*1000:#,###.0}us");
                 return;
             }
 
@@ -298,8 +298,8 @@ namespace RegenerativeDistributedCache
 
                             // if we've acquired a local/farm-wide lock we must send notifications as other local and remote threads may be
                             // waiting on a result (having failed to acquire a lock) - but we can short circuit the regeneration
-                            if ((cacheValue = _underlyingCache.Get(key)) != null &&
-                                cacheValue.CreateCommenced.Add(regenerationInterval).Subtract(TimeSpan.FromSeconds(FarmClockToleranceSeconds)) > DateTime.UtcNow)
+                            if ((creationTimestamp = _underlyingCache.GetCreationTimestamp(key)) != null &&
+                                creationTimestamp.Value.Add(regenerationInterval).Subtract(TimeSpan.FromSeconds(FarmClockToleranceSeconds + TriggerDelaySeconds)) > DateTime.UtcNow)
                             {
                                 _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(RegenerateIfNotUnderway)}: TraceId:{traceId:N}: Found item not due for regeneration within FarmClockToleranceSeconds ({FarmClockToleranceSeconds}s).", ConsoleColor.White);
                                 

@@ -31,7 +31,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-License: http://www.opensource.org/licenses/mit-license.php
+License: https://www.opensource.org/licenses/mit-license.php
 Website: https://github.com/mhano/RegenerativeDistributedCache")]
 
 [assembly: AssemblyConfiguration("")]
@@ -58,7 +58,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-License: http://www.opensource.org/licenses/mit-license.php
+License: https://www.opensource.org/licenses/mit-license.php
 Website: https://github.com/mhano/RegenerativeDistributedCache")]
 [assembly: AssemblyCulture("")]
 

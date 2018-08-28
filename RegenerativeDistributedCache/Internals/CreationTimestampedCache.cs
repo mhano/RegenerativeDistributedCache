@@ -22,7 +22,7 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE.
 
-    License: http://www.opensource.org/licenses/mit-license.php
+    License: https://www.opensource.org/licenses/mit-license.php
     Website: https://github.com/mhano/RegenerativeDistributedCache
  */
 #endregion
@@ -51,6 +51,13 @@ namespace RegenerativeDistributedCache.Internals
             var value = _cache.Get(key);
             return value == null ? null : TimestampedCacheValue.FromString(value);
         }
+
+        public DateTime? GetCreationTimestamp(string key)
+        {
+            var value = _cache.GetStringStart(key, TimestampedCacheValue.MaxDateLength);
+            return value == null ? (DateTime?)null : TimestampedCacheValue.FromString(value).CreateCommenced;
+        }
+
 
         public void RemoveLocal(string key)
         {

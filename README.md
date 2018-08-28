@@ -12,7 +12,16 @@ in RegenerativeCacheManager.Redis
 ## RegenerativeCacheManager
 
 Is the cache that supports scheduling the regeneration of cache items in the background ahead
-of their expiry (and to manage this across a farm of web/service nodes).
+of their expiry (and manages this across a farm of web/service nodes).
+
+Each node takes responsibility for regenerating the cache value if it hasn't been sufficiently 
+recently generated, an external global lock is used to ensure only a single node actually calls
+the generation callback. All nodes are informed when there is a new value in the cache 
+(causing removal of old value from app memory / allowing lazy fetch of updated value from
+network [redis] cache store). Nodes which compete for but don't win the global lock and are
+waiting on an updated value, await a notification message from lock the winning node and 
+then return the value from the network cache (which also populates the local memory cache
+for faster future retrievals).
 
 ### Setup:
 
@@ -22,10 +31,26 @@ As a static/shared instance or singleton from your IOC container:
 regenerativeCacheManagerSingleton = new RegenerativeCacheManager(
 	"mykeyspace", externalCache, distributedLockFactory, fanoutBus)
 {
-    CacheExpiryToleranceSeconds = 60,
+    // Default values:
+    CacheExpiryToleranceSeconds = 30, 
+    FarmClockToleranceSeconds = 15,
     MinimumForwardSchedulingSeconds = 5,
+    TriggerDelaySeconds = 1,
 };
 ```
+
+#### Practical Guidance on Time-spans / Timing Settings:
+* All up-front (above) settings should have the same values across a farm.
+* Regeneration Interval and Inactive Retention (below)  should be consistent across a farm for a given key value.
+* Clock differences between farm nodes should be minimised.
+* CacheExpiryToleranceSeconds (typically 30 seconds to minutes) should be greater than 
+   FarmClockToleranceSeconds (maximum amount of time clocks might differ amongst regenerating nodes).
+* TriggerDelaySeconds (delay in causing expired MemoryCache items to be removed, 1 second works
+   with current .net Framework.
+* regenerationInterval (below) should be comfortably larger than the time it takes to generate a value.
+* inactiveRetention (below) is the period of time for which scheduled background re-generation of value
+   continues to be scheduled.
+* Generation occurs once per regenerationInterval (regardless of how long generation takes).
 
 ### Use:
 
@@ -37,7 +62,6 @@ var result = regenerativeCacheManagerSingleton.GetOrAdd(
     regenerationInterval : TimeSpan.FromMinutes(2) // how frequently to update cache from generateFunc()
 );
 ```
-
 ## CorrelatedAwaitManager
 
 Allows user to await the receipt of a message based on a key. Allows multiple threads to receive a
@@ -46,29 +70,33 @@ single copy of a message (often originating remotely).
 Typical use is to support multiple local threads receiving a notification from some remote source
 (such as a fan out message).
 
-CorrelatedAwaitManager receives a copy of all messages delivered to it then delivers to any threads that have setup
-an awaiter for the specified key value.
+CorrelatedAwaitManager receives a copy of all messages delivered to it then delivers to any threads 
+that have setup an awaiter for the specified key value.
 
-Basically a very short lived subscribe mechanism to support coordination within in distributed system,
-but much cheaper than setting up a specific subscriber.
+Basically a very short lived hyper efficient subscribe mechanism to support coordination within in
+distributed system, much cheaper than setting up a typical subscriber.
 
 * used in RegenerativeCacheManager
 
 ### Setup:
 
 ```C#
-_remoteBus.SubscribeTMessage(m => _singletonCorrelatedAwaitManager.NotifyAwaiters(m));
+_remoteBus.Subscribe<TMessage>(m => _singletonCorrelatedAwaitManager.NotifyAwaiters(m));
 ```
 
 ### Use:
 
 ```C#
-// CAUTION awaiter must be disposed or cancelled (awaiter.Cancel) or you will have a memory leak.
-
-using(var correlatedAwaiter = _correlatedAwaitManager.CreateAwaiter(key))
+// CAUTION awaiter must be disposed or cancelled (awaiter.Cancel())
+using(var awaiter = _correlatedAwaitManager.CreateAwaiter(key))
 {
-    return await correlatedAwaiter.Task.ConfigureAwait(false);
-    // or return correlatedAwaiter.Task.Result;
+    // Note you must be certain that the message is being sent after the
+    // awaiter has been created (or you could end up waiting forever / timing out).
+    
+    // The below or: var message = awaiter.Task.Result;
+    // or awaiter.Task.Wait(timeOut);
+    var message = await awaiter.Task.ConfigureAwait(false);
+    return DoSomething(message);
 }
 ```
 
@@ -78,3 +106,28 @@ Provides a memory front to a network cache so that multiple retrieves on a node 
 single retrieve from the network cache store (such as redis).
 
 * used in RegenerativeCacheManager
+
+## License (MIT)
+
+Copyright (c) 2018 Mhano Harkness
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+* License: https://www.opensource.org/licenses/mit-license.php
+* Website: https://github.com/mhano/RegenerativeDistributedCache

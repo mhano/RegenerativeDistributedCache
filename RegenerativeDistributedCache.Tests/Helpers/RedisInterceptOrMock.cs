@@ -12,10 +12,10 @@ namespace RegenerativeDistributedCache.Tests.Helpers
     /// of redis by passing "mock" to ctor) resets the entire (app domain local) mock of redis
     /// (removes all subscriptions / cache entries).
     /// </summary>
-    internal class RedisIntercept : IExternalCache, IDistributedLockFactory, IFanOutBus, IDisposable
+    internal class RedisInterceptOrMock : IExternalCache, IDistributedLockFactory, IFanOutBus, IDisposable
     {
         private readonly BasicRedisWrapper _basicRedisWrapper;
-        private readonly RedisMock _redisMock;
+        private readonly LocalMemMockOfRedis _redisMock;
 
         public IExternalCache Cache => this;
         public IDistributedLockFactory Lock => this;
@@ -23,22 +23,33 @@ namespace RegenerativeDistributedCache.Tests.Helpers
 
         public ConcurrentBag<KeyValuePair<string,string>> CacheSets = new ConcurrentBag<KeyValuePair<string, string>>();
         public ConcurrentBag<KeyValuePair<string,string>> CacheGets = new ConcurrentBag<KeyValuePair<string, string>>();
+        public ConcurrentBag<KeyValuePair<string,string>> CacheGetStringStarts = new ConcurrentBag<KeyValuePair<string, string>>();
         public ConcurrentBag<string> Subscribes = new ConcurrentBag<string>();
         public ConcurrentBag<KeyValuePair<string,string>> Publishes = new ConcurrentBag<KeyValuePair<string, string>>();
         public ConcurrentBag<KeyValuePair<string,bool>> LockAttempts = new ConcurrentBag<KeyValuePair<string, bool>>();
         public ConcurrentBag<string> ReceivedMessages = new ConcurrentBag<string>();
-
-        /// <param name="redisConfiguration">redis connection config ("localhost:6379") or "mock"</param>
-        public RedisIntercept(string redisConfiguration =  "mock")
+        
+        /// <summary>
+        /// Create an interceptor based on real redis connection(s) or a local in memory redis mock.
+        /// Note: local in memory redis mock does not support "multiple connections" (there is no actual connecting going on)
+        /// </summary>
+        /// <param name="redisConfiguration">redis connection config (e.g. "localhost:6379") or "mock"</param>
+        /// <param name="useMultipleRedisConnections">use a single redis connection vs multiple for different concerns (locking, caching, messaging)</param>
+        public RedisInterceptOrMock(string redisConfiguration = "mock", bool useMultipleRedisConnections = false)
         {
             if (redisConfiguration.ToLowerInvariant() == "mock")
             {
+                if (useMultipleRedisConnections)
+                {
+                    throw new ArgumentException($"Mock redis and useMultipleRedisConnections is non-sensical");
+                }
+
                 _basicRedisWrapper = null;
-                _redisMock = new RedisMock();
+                _redisMock = new LocalMemMockOfRedis();
             }
             else
             {
-                _basicRedisWrapper =  new BasicRedisWrapper(redisConfiguration);
+                _basicRedisWrapper =  new BasicRedisWrapper(redisConfiguration, useMultipleRedisConnections);
                 _redisMock = null;
             }
         }
@@ -61,6 +72,15 @@ namespace RegenerativeDistributedCache.Tests.Helpers
             var value = (_redisMock?.Cache ?? _basicRedisWrapper.Cache).StringGetWithExpiry(key, out expiry);
 
             CacheGets.Add(new KeyValuePair<string, string>(key, value));
+
+            return value;
+        }
+
+        public string GetStringStart(string key, int length)
+        {
+            var value = (_redisMock?.Cache ?? _basicRedisWrapper.Cache).GetStringStart(key, length);
+
+            CacheGetStringStarts.Add(new KeyValuePair<string, string>(key, value));
 
             return value;
         }

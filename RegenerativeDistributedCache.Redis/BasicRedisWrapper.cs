@@ -46,28 +46,64 @@ namespace RegenerativeDistributedCache.Redis
     /// </summary>
     public class BasicRedisWrapper : IDisposable
     {
-        private readonly RedisDistributedLockFactory _redisDistributedLockFactory;
-        private readonly RedisExternalCache _redisExternalCache;
-        private readonly RedisFanOutBus _redisFanOutBus;
+        private RedisDistributedLockFactory _redisDistributedLockFactory;
+        private RedisExternalCache _redisExternalCache;
+        private RedisFanOutBus _redisFanOutBus;
 
         public IExternalCache Cache => _redisExternalCache;
         public IDistributedLockFactory Lock => _redisDistributedLockFactory;
         public IFanOutBus Bus => _redisFanOutBus;
 
-        public BasicRedisWrapper(string redisConfiguration = "localhost:6379")
-            : this(ConnectionMultiplexer.Connect(redisConfiguration))
-        { }
-
-        public BasicRedisWrapper(ConnectionMultiplexer redisConnectionMultiplexer)
+        /// <summary>
+        /// Uses a single redis connection for caching, locking and messaging
+        /// </summary>
+        /// <param name="redisConfiguration">Redis connection string. e.g. "localhost:6379" </param>
+        /// <param name="useMultipleRedisConnections">Uses a single redis connection for caching, locking and messaging or use seperate connections for each.</param>
+        public BasicRedisWrapper(string redisConfiguration, bool useMultipleRedisConnections = false)
         {
-            var redisMultiplexers = new List<ConnectionMultiplexer> { redisConnectionMultiplexer, };
+            if (useMultipleRedisConnections)
+            {
+                Initialise( ConnectionMultiplexer.Connect(redisConfiguration),
+                            ConnectionMultiplexer.Connect(redisConfiguration),
+                            ConnectionMultiplexer.Connect(redisConfiguration));
+            }
+            else
+            {
+                var redisConnection = ConnectionMultiplexer.Connect(redisConfiguration);
+                Initialise(redisConnection, redisConnection, redisConnection);
+            }
+        }
+
+        /// <summary>
+        /// Uses a single redis connection for caching, locking and messaging.
+        /// </summary>
+        /// <param name="redisConnection"></param>
+        public BasicRedisWrapper(IConnectionMultiplexer redisConnection)
+        {
+            Initialise(redisConnection, redisConnection, redisConnection);
+        }
+
+        /// <summary>
+        /// Use seperate redis connections for caching, locking and messaging.
+        /// </summary>
+        /// <param name="cacheConnection"></param>
+        /// <param name="lockConnection"></param>
+        /// <param name="messagingConnection"></param>
+        public BasicRedisWrapper(IConnectionMultiplexer cacheConnection, IConnectionMultiplexer lockConnection, IConnectionMultiplexer messagingConnection)
+        {
+            Initialise(cacheConnection, lockConnection, messagingConnection);
+        }
+
+        private void Initialise(IConnectionMultiplexer cacheConnection, IConnectionMultiplexer lockConnection, IConnectionMultiplexer messagingConnection)
+        {
+            var redisMultiplexersCache = new List<IConnectionMultiplexer> { cacheConnection, };
 
             _redisDistributedLockFactory = new RedisDistributedLockFactory(
-                RedLockFactory.Create(new List<RedLockMultiplexer>(redisMultiplexers.Select(rm => new RedLockMultiplexer(rm)))));
+                RedLockFactory.Create(new List<RedLockMultiplexer>(redisMultiplexersCache.Select(rm => new RedLockMultiplexer(rm)))));
 
-            _redisExternalCache = new RedisExternalCache(redisConnectionMultiplexer.GetDatabase());
+            _redisExternalCache = new RedisExternalCache(lockConnection.GetDatabase());
 
-            _redisFanOutBus = new RedisFanOutBus(redisConnectionMultiplexer.GetSubscriber());
+            _redisFanOutBus = new RedisFanOutBus(messagingConnection.GetSubscriber());
         }
 
         public void Dispose()

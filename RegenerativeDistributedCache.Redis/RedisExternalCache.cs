@@ -22,7 +22,7 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE.
 
-    License: http://www.opensource.org/licenses/mit-license.php
+    License: https://www.opensource.org/licenses/mit-license.php
     Website: https://github.com/mhano/RegenerativeDistributedCache
  */
 #endregion
@@ -56,6 +56,13 @@ namespace RegenerativeDistributedCache.Redis
             var value = validResult ? (string)result.Value : null;
 
             return value;
+        }
+
+        public string GetStringStart(string key, int length)
+        {
+            var result = _redisDatabase.StringGetRange(key, 0, Math.Max(0, length - 1));
+
+            return result.HasValue ? ((string)result).Substring(0, Math.Min(length, ((string)result).Length)) : null;
         }
     }
 }

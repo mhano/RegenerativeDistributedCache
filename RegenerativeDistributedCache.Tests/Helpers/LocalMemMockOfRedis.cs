@@ -13,9 +13,9 @@ namespace RegenerativeDistributedCache.Tests.Helpers
     /// Caution - disposing any instance of this resets the entire (app domain local) mock of redis
     /// (removes all subscriptions / cache entries).
     /// </summary>
-    public class RedisMock : IExternalCache, IDistributedLockFactory, IFanOutBus, IDisposable
+    public class LocalMemMockOfRedis : IExternalCache, IDistributedLockFactory, IFanOutBus, IDisposable
     {
-        private static MemoryCache MemCache = new MemoryCache($"{nameof(RedisMock)}");
+        private static MemoryCache _memoryCache = new MemoryCache($"{nameof(LocalMemMockOfRedis)}");
         private static ConcurrentDictionary<string, ConcurrentBag<Action<string>>> Subscriptions = new ConcurrentDictionary<string, ConcurrentBag<Action<string>>>();
 
         public IExternalCache Cache => this;
@@ -24,7 +24,7 @@ namespace RegenerativeDistributedCache.Tests.Helpers
 
         public static void Reset()
         {
-            MemCache.Dispose();
+            _memoryCache.Dispose();
 
             var oldSub = Subscriptions;
             oldSub.Values.ToList().ForEach(v =>
@@ -32,26 +32,32 @@ namespace RegenerativeDistributedCache.Tests.Helpers
                 while (v.TryTake(out Action<string> tr));
             });
 
-            MemCache = new MemoryCache($"{nameof(RedisMock)}");
+            _memoryCache = new MemoryCache($"{nameof(LocalMemMockOfRedis)}");
             Subscriptions = new ConcurrentDictionary<string, ConcurrentBag<Action<string>>>();
         }
 
         public void StringSet(string key, string val, TimeSpan absoluteExpiration)
         {
             var expiry = DateTime.Now.Add(absoluteExpiration);
-            MemCache.Set(key, new Tuple<DateTime, string>(expiry, val), expiry);
+            _memoryCache.Set(key, new Tuple<DateTime, string>(expiry, val), expiry);
         }
 
         public string StringGetWithExpiry(string key, out TimeSpan expiry)
         {
-            var ci = (Tuple<DateTime, string>)MemCache.Get(key);
+            var ci = (Tuple<DateTime, string>)_memoryCache.Get(key);
             expiry = ci?.Item1.Subtract(DateTime.Now) ?? TimeSpan.MinValue;
             return ci?.Item2;
         }
 
+        public string GetStringStart(string key, int length)
+        {
+            var cacheVal = (Tuple<DateTime, string>)_memoryCache.Get(key);
+            return cacheVal?.Item2?.Substring(0, Math.Min(length, cacheVal.Item2.Length));
+        }
+
         public IDisposable CreateLock(string lockKey, TimeSpan lockExpiryTime)
         {
-            var lck = SimpleHelpers.NamedLock.CreateAndEnter($"RedisMock", 0);
+            var lck = SimpleHelpers.NamedLock.CreateAndEnter($"LocalMemMockOfRedis", 0);
 
             if (lck.IsLocked) return lck;
 

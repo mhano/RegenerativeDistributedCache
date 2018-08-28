@@ -22,12 +22,13 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE.
 
-    License: http://www.opensource.org/licenses/mit-license.php
+    License: https://www.opensource.org/licenses/mit-license.php
     Website: https://github.com/mhano/RegenerativeDistributedCache
  */
 #endregion
 
 using System;
+using System.Diagnostics;
 using System.Runtime.Caching;
 using RegenerativeDistributedCache.Interfaces;
 using RegenerativeDistributedCache.SimpleHelpers;
@@ -71,7 +72,7 @@ namespace RegenerativeDistributedCache
 
             _traceWriter?.Write($"{nameof(MemoryFrontedExternalCache)}: {nameof(Set)}: {nameof(_externalCache)}.{nameof(_externalCache.StringSet)}(key: {key}, ttl: {absoluteExpiration.TotalSeconds});", ConsoleColor.Magenta);
 
-            _externalCache.StringSet($"{_cacheKeyPrefixItem}:{key}", val, absoluteExpiration);
+            _externalCache.StringSet($"{_cacheKeyPrefixItem}{key}", val, absoluteExpiration);
         }
 
         private void StoreLocalMemory(string key, string val, TimeSpan absoluteExpiration)
@@ -99,7 +100,7 @@ namespace RegenerativeDistributedCache
                 if (cacheVal != null) return (string)cacheVal;
 
                 var timePriorToRedisCall = DateTime.UtcNow;
-                var value = _externalCache.StringGetWithExpiry($"{_cacheKeyPrefixItem}:{key}", out var expiry);
+                var value = _externalCache.StringGetWithExpiry($"{_cacheKeyPrefixItem}{key}", out var expiry);
 
                 _traceWriter?.Write($"{nameof(MemoryFrontedExternalCache)}: {nameof(Get)}: {nameof(_externalCache)}.{nameof(_externalCache.StringGetWithExpiry)}(key: {key}, out expiry: {expiry}); => result present: {value != null}", ConsoleColor.Yellow);
 
@@ -118,10 +119,29 @@ namespace RegenerativeDistributedCache
             return null;
         }
 
+        public string GetStringStart(string key, int length)
+        {
+            var cacheVal = (string)_memoryCache.Get(key);
+            // if (cacheVal != null) SynchedConsole.WriteLine($"From Local Cache 1: {key}, val: {cacheVal}", ConsoleColor.White, ConsoleColor.DarkGreen);
+            if (cacheVal != null)
+            {
+                _traceWriter?.Write($"{nameof(MemoryFrontedExternalCache)}: {nameof(GetStringStart)}: {nameof(_memoryCache)}.{nameof(_memoryCache.Get)}(key: {key}, length: {length}); => result length {cacheVal.Length}, returning {Math.Min(length, cacheVal.Length)} characters.", ConsoleColor.Magenta);
+
+                return cacheVal.Substring(0, length);
+            }
+
+            cacheVal = _externalCache.GetStringStart($"{_cacheKeyPrefixItem}{key}", length);
+
+            _traceWriter?.Write($"{nameof(MemoryFrontedExternalCache)}: {nameof(GetStringStart)}: {nameof(_externalCache)}.{nameof(_externalCache.GetStringStart)}(key: {key}, length: {length}); => result length {cacheVal?.Length ?? -1}, returning {Math.Min(length, cacheVal?.Length ?? -1)} characters (-1 = null).", ConsoleColor.Magenta);
+
+            return cacheVal;
+        }
+
         public void RemoveLocal(string key)
         {
-            _traceWriter?.Write($"{nameof(MemoryFrontedExternalCache)}: {nameof(RemoveLocal)}: {key}", ConsoleColor.White, ConsoleColor.DarkRed);
-            _memoryCache.Remove(key);
+            var removed = _memoryCache.Remove(key);
+
+            _traceWriter?.Write($"{nameof(MemoryFrontedExternalCache)}: {nameof(RemoveLocal)}: {key}, Removed: {removed != null}", ConsoleColor.White, ConsoleColor.DarkRed);
         }
 
         public void Dispose()
