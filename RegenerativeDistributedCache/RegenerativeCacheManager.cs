@@ -28,6 +28,7 @@
 #endregion
 
 using System;
+using System.Diagnostics;
 using RegenerativeDistributedCache.Interfaces;
 using RegenerativeDistributedCache.Internals;
 using RegenerativeDistributedCache.SimpleHelpers;
@@ -142,7 +143,7 @@ namespace RegenerativeDistributedCache
             _fanOutBus.Subscribe(_pubSubTopicGenerationCompletedEvent,
                 (value) =>
                 {
-                    _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(_fanOutBus)}.{nameof(_fanOutBus.Subscribe)}.Action: Notify Awaiters from Remote message: {value}", ConsoleColor.Yellow);
+                    _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(_fanOutBus)}.{nameof(_fanOutBus.Subscribe)}.Action: Notify Awaiters from Remote message: {value}");
 
                     ResultNotication msg = null;
 
@@ -153,8 +154,9 @@ namespace RegenerativeDistributedCache
                     }
                     catch (Exception ex)
                     {
-                        // TODO: log error/exception details
-                        _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(_fanOutBus)}.{nameof(_fanOutBus.Subscribe)}.Action: ERROR receiving message, could not deserialize message as ResultNotication, message: {value}, exception: {ex}", ConsoleColor.White, ConsoleColor.Red);
+                        Trace.TraceError($"{nameof(RegenerativeCacheManager)}: {nameof(_fanOutBus)}.{nameof(_fanOutBus.Subscribe)}.Action: ERROR receiving message, could not deserialize message as ResultNotication, message: {value}, exception: {ex}");
+                        
+                        _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(_fanOutBus)}.{nameof(_fanOutBus.Subscribe)}.Action: ERROR receiving message, could not deserialize message as ResultNotication, message: {value}, exception: {ex}");
                     }
 
                     if (msg != null)
@@ -190,22 +192,22 @@ namespace RegenerativeDistributedCache
         {
             TimestampedCacheValue cacheResult;
 
-            var traceId = _traceWriter == null ? (Guid?) null : Guid.NewGuid();
+            var traceId = _traceWriter == null ? null : $"{_localSenderId}_{Guid.NewGuid():N}";
 
-            _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(GetOrAdd)}: TraceId:{traceId:N}: cache check for schedule: {key}", ConsoleColor.Green);
+            _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(GetOrAdd)}: TraceId:{traceId}: cache check for schedule: {key}");
             var triggerExists = _regenTriggers.UpdateLastActivity(key, traceId);
-            _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(GetOrAdd)}: TraceId:{traceId:N}: cache CHECKED for schedule: {key}", ConsoleColor.Green);
+            _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(GetOrAdd)}: TraceId:{traceId}: cache CHECKED for schedule: {key}");
 
             // Cache hit if we have a scheduled regeneration happening AND the value is in local or redis cache
             if (triggerExists && (cacheResult = _underlyingCache.Get($"{key}")) != null)
             {
-                _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(GetOrAdd)}: TraceId:{traceId:N}: cache HIT: {key}", ConsoleColor.Green);
+                _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(GetOrAdd)}: TraceId:{traceId}: cache HIT: {key}");
                 return cacheResult.Value;
             }
             else if (!triggerExists && (cacheResult = _underlyingCache.Get($"{key}")) != null)
             {
                 // got value from cache and local trigger doesn't exist, schedule the trigger and return the result
-                _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(GetOrAdd)}: TraceId:{traceId:N}: remote cache HIT: {key}, regneration scheduled.", ConsoleColor.Green);
+                _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(GetOrAdd)}: TraceId:{traceId}: remote cache HIT: {key}, regneration scheduled.");
 
                 _regenTriggers.EnsureTriggerScheduled(key, () => 
                     RegenerateIfNotUnderway(key, generateFunc, regenerationInterval, true, traceId), 
@@ -217,7 +219,7 @@ namespace RegenerativeDistributedCache
             else
             {
                 // cache generation not scheduled and value not in cache
-                _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(GetOrAdd)}: TraceId:{traceId:N}: cache MISS: {key}", ConsoleColor.Red);
+                _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(GetOrAdd)}: TraceId:{traceId}: cache MISS: {key}");
 
                 using (var correlatedAwaiter = _correlatedAwaitManager.CreateAwaiter(key))
                 {
@@ -228,17 +230,17 @@ namespace RegenerativeDistributedCache
                     // NOTE: was previously async i.e. Task.Run(() => RegenerateIfNotUnderway) - as this is optimistic lock or give up this doesn't need to be async
                     RegenerateIfNotUnderway(key, generateFunc, regenerationInterval, false, traceId);
 
-                    _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(GetOrAdd)}: TraceId:{traceId:N}: cache AWAITING: {key}", ConsoleColor.Cyan);
+                    _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(GetOrAdd)}: TraceId:{traceId}: cache AWAITING: {key}");
 
                     // await notifications that are either fired locally or received from a remote machine the content has been generated
                     var notificationMsg = correlatedAwaiter.Task.Result;
 
-                    _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(GetOrAdd)}: TraceId:{traceId:N}: cache AWAITED: {key}", ConsoleColor.Cyan);
+                    _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(GetOrAdd)}: TraceId:{traceId}: cache AWAITED: {key}");
 
                     if (!notificationMsg.Success)
                     {
                         // Only happens when the generation we were waiting on failed
-                        throw new ApplicationException($"TraceId:{traceId:N}: Error generating value for: {key}, reGenInterval: {regenerationInterval}, exception: {notificationMsg.Exception}");
+                        throw new ApplicationException($"TraceId:{traceId}: Error generating value for: {key}, reGenInterval: {regenerationInterval}, exception: {notificationMsg.Exception}");
                     }
 
                     cacheResult = _underlyingCache.Get(key);
@@ -247,7 +249,7 @@ namespace RegenerativeDistributedCache
                     if (!notificationMsg.Success || cacheResult == null)
                     {
                         // Only happens when the generation we were waiting on failed
-                        throw new ApplicationException($"TraceId:{traceId:N}: Error generating value for: {key}, reGenInterval: {regenerationInterval}, notification appeared successful (no exception details available).");
+                        throw new ApplicationException($"TraceId:{traceId}: Error generating value for: {key}, reGenInterval: {regenerationInterval}, notification appeared successful (no exception details available).");
                     }
 
                     // schedule based on generation time of current cache item + regenerationInterval
@@ -263,7 +265,7 @@ namespace RegenerativeDistributedCache
             }
         }
 
-        private void RegenerateIfNotUnderway(string key, Func<string> generateFunc, TimeSpan regenerationInterval, bool isInBackground, Guid? traceId)
+        private void RegenerateIfNotUnderway(string key, Func<string> generateFunc, TimeSpan regenerationInterval, bool isInBackground, string traceId)
         {
             // generate value in the background then notify any thread/awaiters that got a cache miss looking for the item
             // this means the heavy call is only made with 1 DOP and all waiting threads get the result when ready
@@ -283,14 +285,14 @@ namespace RegenerativeDistributedCache
                 // item valid up to shortly before it is due to regenerate, thus regenerations fired immediately after others simply skip
                 creationTimestamp.Value.Add(regenerationInterval).Subtract(TimeSpan.FromSeconds(FarmClockToleranceSeconds + TriggerDelaySeconds)) > DateTime.UtcNow)
             {
-                _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(RegenerateIfNotUnderway)}: TraceId:{traceId:N}: Key: {key}, Regenerate skipped, not due for regeneration for: {creationTimestamp.Value.Add(regenerationInterval).Subtract(DateTime.UtcNow).TotalMilliseconds*1000:#,###.0}us");
+                _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(RegenerateIfNotUnderway)}: TraceId:{traceId}: Key: {key}, Regenerate skipped, not due for regeneration for: {creationTimestamp.Value.Add(regenerationInterval).Subtract(DateTime.UtcNow).TotalMilliseconds*1000:#,###.0}us");
                 return;
             }
 
             var localLockStart = DateTime.Now;
             using (var localLock = NamedLock.CreateAndEnter($"{_lockKeyPrefixLocalRegenerate}{key}", 0))
             {
-                _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(RegenerateIfNotUnderway)}: TraceId:{traceId:N}: Key: {key}, Local_{(localLock.IsLocked ? "Lock_Acquired" : "Lock_NOT_Acquired")} in {DateTime.Now.Subtract(localLockStart).TotalMilliseconds * 1000:#,##0.0}us", localLock.IsLocked ? ConsoleColor.DarkGreen : ConsoleColor.Red, ConsoleColor.Cyan);
+                _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(RegenerateIfNotUnderway)}: TraceId:{traceId}: Key: {key}, Local_{(localLock.IsLocked ? "Lock_Acquired" : "Lock_NOT_Acquired")} in {DateTime.Now.Subtract(localLockStart).TotalMilliseconds * 1000:#,##0.0}us");
 
                 if (localLock.IsLocked)
                 {
@@ -298,7 +300,7 @@ namespace RegenerativeDistributedCache
                     // Only acquire lock for regenration interval (allow a parallel regeneration to commence during the expiry tollerance period)
                     using (var distributedLock = _distributedLockFactory.CreateLock($"{_lockKeyPrefixGlobalRegenerate}{key}", regenerationInterval))
                     {
-                        _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(RegenerateIfNotUnderway)}: TraceId:{traceId:N}:  Key: {key}, Global_{(distributedLock != null ? "Lock_Acquired" : "Lock_NOT_Acquired")} in {DateTime.Now.Subtract(remoteLockStart).TotalMilliseconds * 1000:#,##0.0}us", distributedLock != null ? ConsoleColor.DarkGreen : ConsoleColor.Red, ConsoleColor.Cyan);
+                        _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(RegenerateIfNotUnderway)}: TraceId:{traceId}:  Key: {key}, Global_{(distributedLock != null ? "Lock_Acquired" : "Lock_NOT_Acquired")} in {DateTime.Now.Subtract(remoteLockStart).TotalMilliseconds * 1000:#,##0.0}us");
                         
                         if (distributedLock != null)
                         {
@@ -309,14 +311,14 @@ namespace RegenerativeDistributedCache
                             if ((creationTimestamp = _underlyingCache.GetCreationTimestamp(key)) != null &&
                                 creationTimestamp.Value.Add(regenerationInterval).Subtract(TimeSpan.FromSeconds(FarmClockToleranceSeconds + TriggerDelaySeconds)) > DateTime.UtcNow)
                             {
-                                _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(RegenerateIfNotUnderway)}: TraceId:{traceId:N}: Found item not due for regeneration within FarmClockToleranceSeconds ({FarmClockToleranceSeconds}s).", ConsoleColor.White);
+                                _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(RegenerateIfNotUnderway)}: TraceId:{traceId}: Found item not due for regeneration within FarmClockToleranceSeconds ({FarmClockToleranceSeconds}s).");
                                 
                                 // as we have the global lock, there may be awaiters so we need to notify
                                 notificationMsg = new ResultNotication(key, _localSenderId);
                             }
                             else
                             {
-                                _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(RegenerateIfNotUnderway)}: TraceId:{traceId:N}: Generating: {key}", ConsoleColor.White);
+                                _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(RegenerateIfNotUnderway)}: TraceId:{traceId}: Generating: {key}");
 
                                 var generationStartedTime = DateTime.UtcNow;
 
@@ -329,25 +331,24 @@ namespace RegenerativeDistributedCache
                                     if (DateTime.UtcNow.Subtract(generationStartedTime) > regenerationInterval.Subtract(TimeSpan.FromSeconds(FarmClockToleranceSeconds)))
                                     {
                                         // TODO: log warning
-                                        _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(RegenerateIfNotUnderway)}: TraceId:{traceId:N}:  ******************************* WARNING  **********************************************\r\n" +
+                                        _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(RegenerateIfNotUnderway)}: TraceId:{traceId}:  ******************************* WARNING  **********************************************\r\n" +
                                                             "  * Cache item generation took longer than regenerationInterval, this willresult in cache      *\r\n" +
                                                             "  * misses, unnecessary network traffic/regeneration and application PERFORMANCE PROBLEMS!     *\r\n" +
                                                             $"  * Details: Started: {generationStartedTime:O}, Duration: {DateTime.UtcNow.Subtract(generationStartedTime)}, Key: {key}\r\n" +
-                                                            "  **********************************************************************************************",
-                                            ConsoleColor.DarkRed, ConsoleColor.Yellow);
+                                                            "  **********************************************************************************************");
                                     }
 
                                     notificationMsg = new ResultNotication(key, _localSenderId);
                                 }
                                 catch (Exception ex)
                                 {
-                                    _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(RegenerateIfNotUnderway)}: TraceId:{traceId:N}: Error: {ex}", ConsoleColor.White, ConsoleColor.Red);
+                                    _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(RegenerateIfNotUnderway)}: TraceId:{traceId}: Error: {ex}");
 
                                     result = null;
                                     notificationMsg = new ResultNotication(key, ex.ToString(), _localSenderId);
                                 }
 
-                                _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(RegenerateIfNotUnderway)}: TraceId:{traceId:N}: GENERATED: {key}, Succes: {notificationMsg.Success}, Size: {result?.Length ?? -1}, generationStartedTime: {generationStartedTime:mm:ss.ffffff}", ConsoleColor.White);
+                                _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(RegenerateIfNotUnderway)}: TraceId:{traceId}: GENERATED: {key}, Succes: {notificationMsg.Success}, Size: {result?.Length ?? -1}, generationStartedTime: {generationStartedTime:mm:ss.ffffff}");
 
                                 if (result != null)
                                 {
@@ -357,20 +358,20 @@ namespace RegenerativeDistributedCache
                                 }
                             }
 
-                            _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(RegenerateIfNotUnderway)}: TraceId:{traceId:N}: Notify Awaiters Local: {key}", ConsoleColor.White);
+                            _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(RegenerateIfNotUnderway)}: TraceId:{traceId}: Notify Awaiters Local: {key}");
                             // tell local awaiters content is ready
                             _correlatedAwaitManager.NotifyAwaiters(notificationMsg);
 
                             // trigger publish of redis fan out message to notify awaiters (also something needs to setup _correlatedAwaitManager to consume)
-                            _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(RegenerateIfNotUnderway)}: TraceId:{traceId:N}: Publish to Remote Awaiters: {key}", ConsoleColor.White);
+                            _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(RegenerateIfNotUnderway)}: TraceId:{traceId}: Publish to Remote Awaiters: {key}");
                             _fanOutBus.Publish(_pubSubTopicGenerationCompletedEvent, notificationMsg.ToString());
-                            _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(RegenerateIfNotUnderway)}: TraceId:{traceId:N}: Published to Remote Awaiters: {key}", ConsoleColor.White);
+                            _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(RegenerateIfNotUnderway)}: TraceId:{traceId}: Published to Remote Awaiters: {key}");
 
-                            _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(RegenerateIfNotUnderway)}: TraceId:{traceId:N}: Global_Lock_Releasing", ConsoleColor.DarkYellow, ConsoleColor.Cyan);
+                            _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(RegenerateIfNotUnderway)}: TraceId:{traceId}: Global_Lock_Releasing");
                         }
                     }
 
-                    _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(RegenerateIfNotUnderway)}: TraceId:{traceId:N}: Local_Lock_Releasing", ConsoleColor.DarkYellow, ConsoleColor.Cyan);
+                    _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(RegenerateIfNotUnderway)}: TraceId:{traceId}: Local_Lock_Releasing");
                 }
             }
 

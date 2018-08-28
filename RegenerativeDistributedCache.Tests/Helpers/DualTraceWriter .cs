@@ -23,11 +23,11 @@ namespace RegenerativeDistributedCache.Tests.Helpers
                 _dtw = dtw;
             }
 
-            public void Write(string message, ConsoleColor? fgColor = null, ConsoleColor? bgColor = null)
+            public void Write(string message)
             {
-                _dtw.CollectedOutput.Add(new Tuple<int, DateTime, string, ConsoleColor?, ConsoleColor?>(
+                _dtw.CollectedOutput.Add(new Tuple<int, DateTime, string>(
                     Interlocked.Increment(ref _dtw._sequenceSource), DateTime.Now,
-                    $"{_name}: {message}", fgColor, bgColor
+                    $"{_name}: {message}"
                 ));
             }
         }
@@ -38,7 +38,7 @@ namespace RegenerativeDistributedCache.Tests.Helpers
             T2 = new T("T2", this);
         }
 
-        public readonly ConcurrentBag<Tuple<int, DateTime, string, ConsoleColor?, ConsoleColor?>> CollectedOutput = new ConcurrentBag<Tuple<int, DateTime, string, ConsoleColor?, ConsoleColor?>>();
+        public readonly ConcurrentBag<Tuple<int, DateTime, string>> CollectedOutput = new ConcurrentBag<Tuple<int, DateTime, string>>();
         private int _sequenceSource;
 
         public IEnumerable<string> GetOutput()
@@ -47,7 +47,7 @@ namespace RegenerativeDistributedCache.Tests.Helpers
             return CollectedOutput.OrderBy(i => i.Item1).Select(t => GetText(t, format));
         }
 
-        private static string GetText(Tuple<int, DateTime, string, ConsoleColor?, ConsoleColor?> l, string seqFormat = "0")
+        private static string GetText(Tuple<int, DateTime, string> l, string seqFormat = "0")
         {
             return $"{l.Item1.ToString(seqFormat)}:{l.Item2:mm:ss.ffffff}: {l.Item3}";
         }
