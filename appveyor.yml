@@ -29,13 +29,15 @@ build:
   # MSBuild verbosity level - quiet|minimal|normal|detailed
   verbosity: normal
 
-#artifacts:
-#  - path: '**\RegenerativeDistributedCache*.nupkg'
-#    name: Nuget
+# only master branch deploys to NuGet.org
+-
+  branches:
+    only:
+      - master
 
-deploy:
-  provider: NuGet
-  api_key:
-    secure: Z6p8drICTxdQrd2FcCJfX0D0NdWdPLklJ8ELOhrHprK+b7qXsPYvOupSdI+vzoyd
-  skip_symbols: false
-  artifact: /.*\.nupkg/
+    deploy:
+      provider: NuGet
+      api_key:
+        secure: Z6p8drICTxdQrd2FcCJfX0D0NdWdPLklJ8ELOhrHprK+b7qXsPYvOupSdI+vzoyd
+      skip_symbols: false
+      artifact: /.*\.nupkg/
