@@ -12,13 +12,6 @@ namespace RegenerativeDistributedCache.Tests
 {
     public class RegenerativeCacheManagerTests
     {
-        private const string LocalRedis = "localhost:6379";
-        private static readonly Dictionary<string,string> TestMachinesWithRedisAccess = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase)
-        {
-            // list of machines with access to a redis instance
-            { "sydcn1012", LocalRedis },
-        };
-
         private readonly ITestOutputHelper _output;
         public RegenerativeCacheManagerTests(ITestOutputHelper output)
         { this._output = output; }
@@ -47,9 +40,9 @@ namespace RegenerativeDistributedCache.Tests
         [InlineData(false)]
         public void LiveRedisOrSkipSingleNodeGets(bool useMultipleRedisConnections)
         {
-            if (TestMachinesWithRedisAccess.TryGetValue(Environment.MachineName, out string redisConnection))
+            if (TestMachineHasRedis.GetRedisConnection(out string redisConnection))
             {
-                SingleNodeGetsInternal(LocalRedis, useMultipleRedisConnections);
+                SingleNodeGetsInternal(redisConnection, useMultipleRedisConnections);
             }
         }
 
@@ -58,9 +51,9 @@ namespace RegenerativeDistributedCache.Tests
         [InlineData(false)]
         public void LiveRedisOrSkipMultiNodeGets(bool useMultipleRedisConnections)
         {
-            if (TestMachinesWithRedisAccess.TryGetValue(Environment.MachineName, out string redisConnection))
+            if (TestMachineHasRedis.GetRedisConnection(out string redisConnection))
             {
-                MultiNodeGetsInternal(LocalRedis, useMultipleRedisConnections);
+                MultiNodeGetsInternal(redisConnection, useMultipleRedisConnections);
             }
         }
 

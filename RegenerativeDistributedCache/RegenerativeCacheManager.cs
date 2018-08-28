@@ -154,9 +154,11 @@ namespace RegenerativeDistributedCache
                     }
                     catch (Exception ex)
                     {
-                        Trace.TraceError($"{nameof(RegenerativeCacheManager)}: {nameof(_fanOutBus)}.{nameof(_fanOutBus.Subscribe)}.Action: ERROR receiving message, could not deserialize message as ResultNotication, message: {value}, exception: {ex}");
+                        var message = $"{nameof(RegenerativeCacheManager)}: {nameof(_fanOutBus)}.{nameof(_fanOutBus.Subscribe)}.Action: ERROR receiving message, could not deserialize message as ResultNotication, message: {value}, exception: {ex}";
+
+                        Trace.TraceError(message);
                         
-                        _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(_fanOutBus)}.{nameof(_fanOutBus.Subscribe)}.Action: ERROR receiving message, could not deserialize message as ResultNotication, message: {value}, exception: {ex}");
+                        _traceWriter?.Write(message);
                     }
 
                     if (msg != null)
@@ -330,12 +332,21 @@ namespace RegenerativeDistributedCache
 
                                     if (DateTime.UtcNow.Subtract(generationStartedTime) > regenerationInterval.Subtract(TimeSpan.FromSeconds(FarmClockToleranceSeconds)))
                                     {
-                                        // TODO: log warning
-                                        _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(RegenerateIfNotUnderway)}: TraceId:{traceId}:  ******************************* WARNING  **********************************************\r\n" +
-                                                            "  * Cache item generation took longer than regenerationInterval, this willresult in cache      *\r\n" +
-                                                            "  * misses, unnecessary network traffic/regeneration and application PERFORMANCE PROBLEMS!     *\r\n" +
-                                                            $"  * Details: Started: {generationStartedTime:O}, Duration: {DateTime.UtcNow.Subtract(generationStartedTime)}, Key: {key}\r\n" +
-                                                            "  **********************************************************************************************");
+                                        var message = $"  ******************************* WARNING  **********************************************\r\n" +
+                                                      $"  *  Cache item generation took longer than regenerationInterval, this willresult in cache      *\r\n" +
+                                                      $"  *  misses, unnecessary network traffic/regeneration and application PERFORMANCE PROBLEMS!     *\r\n" +
+                                                      $"  *  Details: Key: {key}\r\n" +
+                                                      $"  *           Started: {generationStartedTime.ToLocalTime():O},\r\n" +
+                                                      $"  *           Duration: {DateTime.UtcNow.Subtract(generationStartedTime).TotalMilliseconds*1000:#,##0.0}us,\r\n" +
+                                                      $"  *           Where: {nameof(RegenerativeCacheManager)}: {nameof(RegenerateIfNotUnderway)}\r\n" +
+                                                      $"  *           TraceId:{traceId}: \r\n" +
+                                                      "  **********************************************************************************************";
+
+                                        // TODO: How do we monitor this, should we accept a metrics writing interface to allow performance information up
+                                        // TODO: or should this continue to rely on application writer/implementer to monitor?
+                                        Trace.TraceWarning(message);
+
+                                        _traceWriter?.Write(message);
                                     }
 
                                     notificationMsg = new ResultNotication(key, _localSenderId);
