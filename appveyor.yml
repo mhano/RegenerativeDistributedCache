@@ -30,6 +30,7 @@ build:
   verbosity: normal
 
 # only master branch deploys to NuGet.org
+for:
 -
   branches:
     only:
