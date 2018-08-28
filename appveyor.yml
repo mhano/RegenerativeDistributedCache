@@ -14,6 +14,10 @@ assembly_info:
 before_build:
 - nuget restore
 
+after_build:
+- nuget pack RegenerativeDistributedCache
+- nuget pack RegenerativeDistributedCache.Redis
+
 build:
   publish_nuget: true             # package projects with .nuspec files and push to artifacts
 
