@@ -97,7 +97,7 @@ that have setup an awaiter for the specified key value.
 Basically a very short lived hyper efficient subscribe mechanism to support coordination within in
 distributed system, much cheaper than setting up a typical subscriber.
 
-* used in RegenerativeCacheManager
+*used in RegenerativeCacheManager*
 
 ### Setup:
 
@@ -129,7 +129,7 @@ return DoSomething(message);
 Provides a memory front to a network cache so that multiple retrieves on a node only results in a
 single retrieve from the network cache store (such as redis).
 
-* used in RegenerativeCacheManager
+*used in RegenerativeCacheManager*
 
 ## License (MIT)
 
