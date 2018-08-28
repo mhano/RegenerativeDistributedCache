@@ -72,9 +72,15 @@ regenerativeCacheManagerSingleton = new RegenerativeCacheManager(
 ```C#
 var result = regenerativeCacheManagerSingleton.GetOrAdd(
     key: $"{nameof(Item)}:{itemId}", 
-    generateFunc: () => GetItem(itemId).AsString(), // will not be called if value exists
-    inactiveRetention: TimeSpan.FromMinutes(30), // total time in cache and regenerating after last GetOrAdd call
-    regenerationInterval : TimeSpan.FromMinutes(2) // how frequently to update cache from generateFunc()
+
+	// will not be called if value exists
+    generateFunc: () => GetItem(itemId).AsString(),
+
+	// total time in cache and regenerating after last GetOrAdd call
+    inactiveRetention: TimeSpan.FromMinutes(30),
+
+	// how frequently to update cache from generateFunc()
+    regenerationInterval : TimeSpan.FromMinutes(2)
 );
 ```
 ## CorrelatedAwaitManager
