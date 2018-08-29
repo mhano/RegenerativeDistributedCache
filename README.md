@@ -9,6 +9,13 @@ mechanism (all three of these can be provided by Redis or you might use alternat
 more of these such as RabbitMq for messaging). Basic Redis implementations of these are provided
 in RegenerativeCacheManager.Redis.
 
+* Packages:
+  * [NuGet.org -> RegenerativeDistributedCache](https://www.nuget.org/packages/RegenerativeDistributedCache/)
+  * [NuGet.org -> RegenerativeDistributedCache.Redis](https://www.nuget.org/packages/RegenerativeDistributedCache.Redis/)
+* Website: [GitHub -> mhano/RegenerativeDistributedCache](https://github.com/mhano/RegenerativeDistributedCache)
+* Builds: [Appveyor -> mhano/regenerativedistributedcache](https://ci.appveyor.com/project/mhano/regenerativedistributedcache)
+* License: ["MIT" License Here](https://raw.githubusercontent.com/mhano/RegenerativeDistributedCache/master/LICENSE), reference: [[OpenSource.org -> MIT](https://opensource.org/licenses/mit)]
+
 ## RegenerativeDistributedCache.Redis
 
 Basic Redis backed implementations of the interfaces in RegenerativeDistributedCache.Interfaces for 
@@ -166,5 +173,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-* License: https://www.opensource.org/licenses/mit-license.php
-* Website: https://github.com/mhano/RegenerativeDistributedCache
+### Links
+* Packages:
+  * [NuGet.org -> RegenerativeDistributedCache](https://www.nuget.org/packages/RegenerativeDistributedCache/)
+  * [NuGet.org -> RegenerativeDistributedCache.Redis](https://www.nuget.org/packages/RegenerativeDistributedCache.Redis/)
+* Website: [GitHub -> mhano/RegenerativeDistributedCache](https://github.com/mhano/RegenerativeDistributedCache)
+* Builds: [Appveyor -> mhano/regenerativedistributedcache](https://ci.appveyor.com/project/mhano/regenerativedistributedcache)
+* License: ["MIT" License Here](https://raw.githubusercontent.com/mhano/RegenerativeDistributedCache/master/LICENSE), reference: [[OpenSource.org -> MIT](https://opensource.org/licenses/mit)]
