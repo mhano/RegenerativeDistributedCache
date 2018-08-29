@@ -6,22 +6,22 @@ generation work.
 
 Requires an external (network) cache, a fan out pub/sub message bus, and a distributed locking
 mechanism (all three of these can be provided by Redis or you might use alternatives for one or
-more of these such as RabbitMq for messaging). Basic redis implementations of these are provided
+more of these such as RabbitMq for messaging). Basic Redis implementations of these are provided
 in RegenerativeCacheManager.Redis.
 
 ## RegenerativeDistributedCache.Redis
 
-Basic redis backed implementations of the interfaces in RegenerativeDistributedCache.Interfaces for 
+Basic Redis backed implementations of the interfaces in RegenerativeDistributedCache.Interfaces for 
 an external (network) cache, a fan out pub/sub message bus, and a distributed locking mechanism for
 use with RegenerativeDistributedCache.RegenerativeCacheManager.
 
 Use a combination of RedisExternalCache, RedisDistributedLockFactory and RedisFanoutBus connected
-to your existing wiring / configuration redis/redlock or replace components as needed (such as 
+to your existing wiring / configuration Redis/RedLock or replace components as needed (such as 
 implementing a RabbitMq or MassTransit based IFanOutBus instead of RedisFanOutBus).
 
-CAUTION - The BasicRedisWrapper wraps up the creation of all three (either based on a single redis 
-connection, or a redis connection per concern [caching/locking/messaging]) but performs some pretty
-basic implemention in regards to connecting to redis, you will want to review the approach carefully
+CAUTION - The BasicRedisWrapper wraps up the creation of all three (either based on a single Redis 
+connection, or a Redis connection per concern [caching/locking/messaging]) but performs some pretty
+basic implemention in regards to connecting to Redis, you will want to review the approach carefully
 prior to using.
 
 ## RegenerativeCacheManager
@@ -33,8 +33,8 @@ Each node takes responsibility for regenerating the cache value if it hasn't bee
 recently generated, an external global lock is used to ensure only a single node actually calls
 the generation callback. All nodes are informed when there is a new value in the cache 
 (causing removal of old value from app memory / allowing lazy fetch of updated value from
-network [redis] cache store). Nodes which compete for but don't win the global lock and are
-waiting on an updated value, await a notification message from lock the winning node and 
+network [Redis] cache store). Nodes which compete for but don't win the global lock and are
+waiting on an updated value, await a notification message from the lock winning node and 
 then return the value from the network cache (which also populates the local memory cache
 for faster future retrievals).
 
@@ -56,7 +56,7 @@ regenerativeCacheManagerSingleton = new RegenerativeCacheManager(
 
 #### Practical Guidance on Time-spans / Timing Settings:
 * All up-front (above) settings should have the same values across a farm.
-* Regeneration Interval and Inactive Retention (below)  should be consistent across a farm
+* Regeneration Interval and Inactive Retention (below) should be consistent across a farm
    for a given key value.
 * Clock differences between farm nodes should be minimised.
 * CacheExpiryToleranceSeconds (typically 30 seconds to minutes) should be greater than 
@@ -140,7 +140,7 @@ return GetSomething(key);
 ## MemoryFrontedExternalCache
 
 Provides a memory front to a network cache so that multiple retrieves on a node only results in a
-single retrieve from the network cache store (such as redis).
+single retrieve from the network cache store (such as Redis).
 
 *used in RegenerativeCacheManager*
 
