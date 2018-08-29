@@ -22,7 +22,7 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE.
 
-    License: https://www.opensource.org/licenses/mit-license.php
+    License: https://opensource.org/licenses/mit
     Website: https://github.com/mhano/RegenerativeDistributedCache
  */
 #endregion

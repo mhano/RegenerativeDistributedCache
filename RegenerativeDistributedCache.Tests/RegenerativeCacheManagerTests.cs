@@ -1,4 +1,33 @@
-﻿using System;
+﻿#region *   License     *
+/*
+    RegenerativeDistributedCache - Tests
+
+    Copyright (c) 2018 Mhano Harkness
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+
+    License: https://opensource.org/licenses/mit
+    Website: https://github.com/mhano/RegenerativeDistributedCache
+ */
+#endregion
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -12,6 +41,8 @@ namespace RegenerativeDistributedCache.Tests
 {
     public class RegenerativeCacheManagerTests
     {
+        private static int _seq;
+
         private readonly ITestOutputHelper _output;
         public RegenerativeCacheManagerTests(ITestOutputHelper output)
         { this._output = output; }
@@ -57,9 +88,9 @@ namespace RegenerativeDistributedCache.Tests
             }
         }
 
-        private void SingleNodeGetsInternal(string redisConnection, bool useMultipleRedisConnections)
+        private void SingleNodeGetsInternal(string redisConnection, bool useMultipleRedisConnections, string writeTraceFile = null)
         {
-            var testRunKeyspace = $"{Guid.NewGuid():N}";
+            var testRunKeyspace = $"testKs{DateTime.Now:mmssfffffff}s{Interlocked.Increment(ref _seq)}";
 
             var tw = new TraceWriter();
             using (var ext = new RedisInterceptOrMock(redisConnection, useMultipleRedisConnections))
@@ -134,13 +165,13 @@ namespace RegenerativeDistributedCache.Tests
                 Assert.Equal(result5, result6);
 
                 // File.WriteAllLines("C:\\temp\\temp3.txt", tw.GetOutput());
-                // tw.GetOutput().ToList().ForEach(t => _output.WriteLine(t));
+                if (writeTraceFile != null) File.WriteAllLines(writeTraceFile, tw.GetOutput());
             }
         }
 
-        private void MultiNodeGetsInternal(string redisConnection, bool useMultipleRedisConnections)
+        private void MultiNodeGetsInternal(string redisConnection, bool useMultipleRedisConnections, string writeTraceFile = null)
         {
-            var testRunKeyspace = $"{Guid.NewGuid():N}";
+            var testRunKeyspace = $"testKs{DateTime.Now:mmssfffffff}s{Interlocked.Increment(ref _seq)}";
 
             var dtw = new DualTraceWriter();
             using (var node1Ext = new RedisInterceptOrMock(redisConnection, useMultipleRedisConnections))
@@ -272,7 +303,7 @@ namespace RegenerativeDistributedCache.Tests
                 Assert.Equal(node2Result3, node1Result8);
 
                 // tw.GetOutput().ToList().ForEach(t => output.WriteLine(t));
-                // File.WriteAllLines("C:\\temp\\temp3.txt", dtw.GetOutput());
+                if(writeTraceFile != null) File.WriteAllLines(writeTraceFile, dtw.GetOutput());
             }
         }
     }

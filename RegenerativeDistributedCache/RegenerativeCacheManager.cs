@@ -22,7 +22,7 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
     SOFTWARE.
 
-    License: https://www.opensource.org/licenses/mit-license.php
+    License: https://opensource.org/licenses/mit
     Website: https://github.com/mhano/RegenerativeDistributedCache
  */
 #endregion
@@ -122,7 +122,7 @@ namespace RegenerativeDistributedCache
             _fanOutBus = fanOutBus;
             _traceWriter = traceWriter;
 
-            _localSenderId = $"{Environment.MachineName.ToLowerInvariant()}_{Guid.NewGuid():N}";
+            _localSenderId = $"{Environment.MachineName.ToLowerInvariant()}-{keyspace}-{Guid.NewGuid():N}";
 
             _underlyingCache = new CreationTimestampedCache(_keyspace, externalCache, traceWriter);
             _regenTriggers = new ScheduledTriggerManager(_keyspace, traceWriter);
@@ -169,6 +169,7 @@ namespace RegenerativeDistributedCache
 
                         _correlatedAwaitManager.NotifyAwaiters(msg);
 
+                        // remove from local cache if value not generated on this node
                         if (msg.Success && !msg.IsLocalSender(_localSenderId))
                         {
                             _underlyingCache.RemoveLocal(msg.Key);
@@ -194,7 +195,7 @@ namespace RegenerativeDistributedCache
         {
             TimestampedCacheValue cacheResult;
 
-            var traceId = _traceWriter == null ? null : $"{_localSenderId}_{Guid.NewGuid():N}";
+            var traceId = _traceWriter == null ? null : $"{_localSenderId}-{Guid.NewGuid():N}";
 
             _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(GetOrAdd)}: TraceId:{traceId}: cache check for schedule: {key}");
             var triggerExists = _regenTriggers.UpdateLastActivity(key, traceId);
