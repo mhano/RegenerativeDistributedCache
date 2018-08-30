@@ -1,0 +1,5 @@
+﻿{
+  "methodDisplay": "classAndMethod",
+  "methodDisplayOptions": "replacePeriodWithComma",
+  "preEnumerateTheories": true
+}
