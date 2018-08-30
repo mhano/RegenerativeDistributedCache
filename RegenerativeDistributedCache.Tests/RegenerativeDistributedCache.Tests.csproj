@@ -65,12 +65,14 @@
   <ItemGroup>
     <Compile Include="Helpers\DualTraceWriter .cs" />
     <Compile Include="Helpers\LocalMemMockOfRedis.cs" />
-    <Compile Include="RedisWrappersIfLocalRedisAvailableTests.cs" />
+    <Compile Include="DynamicSkippableTests\SkippableFactAttribute.cs" />
+    <Compile Include="DynamicSkippableTests\SkippableTheoryAttribute.cs" />
+    <Compile Include="RedisWrapperTests.cs" />
     <Compile Include="RegenerativeCacheManagerTests.cs" />
     <Compile Include="Helpers\RedisInterceptOrMock.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Helpers\TraceWriter.cs" />
-    <Compile Include="Helpers\TestMachineHasRedis.cs" />
+    <Compile Include="DynamicSkippableTests\TestMachineHasRedis.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\RegenerativeDistributedCache.Redis\RegenerativeDistributedCache.Redis.csproj">

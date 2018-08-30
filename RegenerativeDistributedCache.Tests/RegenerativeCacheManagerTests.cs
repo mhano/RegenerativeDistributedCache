@@ -33,6 +33,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using RegenerativeDistributedCache.Tests.DynamicSkippableTests;
 using RegenerativeDistributedCache.Tests.Helpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -59,12 +60,12 @@ namespace RegenerativeDistributedCache.Tests
             SingleNodeGetsInternal("mock", false);
         }
 
-        [Theory]
+        [SkippableTheory]
         [InlineData(true)]
         [InlineData(false)]
         public void LiveRedisOrSkipSingleNodeGets(bool useMultipleRedisConnections)
         {
-            if (!TestMachineHasRedis.GetRedisConnection(out string redisConnection)) return;
+            var redisConnection = TestMachineHasRedis.GetTestEnvironmentRedis();
             SingleNodeGetsInternal(redisConnection, useMultipleRedisConnections);
         }
 
@@ -73,12 +74,13 @@ namespace RegenerativeDistributedCache.Tests
         {
             MultiNodeGetsInternal("mock", false);
         }
-        [Theory]
+
+        [SkippableTheory]
         [InlineData(true)]
         [InlineData(false)]
         public void LiveRedisOrSkipMultiNodeGets(bool useMultipleRedisConnections)
         {
-            if (!TestMachineHasRedis.GetRedisConnection(out string redisConnection)) return;
+            var redisConnection = TestMachineHasRedis.GetTestEnvironmentRedis();
 
             MultiNodeGetsInternal(redisConnection, useMultipleRedisConnections);
         }
@@ -89,12 +91,12 @@ namespace RegenerativeDistributedCache.Tests
             NodesCompeteInternal("mock", false);
         }
 
-        [Theory]
+        [SkippableTheory]
         [InlineData(true)]
         [InlineData(false)]
         public void LiveRedisNodesCompete(bool useMultipleRedisConnections)
         {
-            if (!TestMachineHasRedis.GetRedisConnection(out string redisConnection)) return;
+            var redisConnection = TestMachineHasRedis.GetTestEnvironmentRedis();
 
             NodesCompeteInternal(redisConnection, useMultipleRedisConnections);
         }

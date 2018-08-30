@@ -5,22 +5,23 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using RegenerativeDistributedCache.Redis;
+using RegenerativeDistributedCache.Tests.DynamicSkippableTests;
 using RegenerativeDistributedCache.Tests.Helpers;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace RegenerativeDistributedCache.Tests
 {
-    public class RedisWrappersIfLocalRedisAvailableTests
+    public class RedisWrapperTests
     {
         private readonly ITestOutputHelper _output;
-        public RedisWrappersIfLocalRedisAvailableTests(ITestOutputHelper output)
+        public RedisWrapperTests(ITestOutputHelper output)
         { _output = output; }
 
-        [Fact]
+        [SkippableFact]
         public void RedisLockingWorks()
         {
-            if (!TestMachineHasRedis.GetRedisConnection(out string redisConnection)) return;
+            var redisConnection = TestMachineHasRedis.GetTestEnvironmentRedis();
 
             var testId = Guid.NewGuid();
             using (var basicRedis1 = new BasicRedisWrapper(redisConnection, false))
@@ -38,10 +39,10 @@ namespace RegenerativeDistributedCache.Tests
             }
         }
 
-        [Fact]
+        [SkippableFact]
         public void RedisCachingWorks()
         {
-            if (!TestMachineHasRedis.GetRedisConnection(out string redisConnection)) return;
+            var redisConnection = TestMachineHasRedis.GetTestEnvironmentRedis();
 
             using (var basicRedis1 = new BasicRedisWrapper(redisConnection, false))
             using (var basicRedis2 = new BasicRedisWrapper(redisConnection, false))
@@ -101,10 +102,10 @@ namespace RegenerativeDistributedCache.Tests
             }
         }
 
-        [Fact]
+        [SkippableFact]
         public void RedisMessagingWorks()
         {
-            if (!TestMachineHasRedis.GetRedisConnection(out string redisConnection)) return;
+            var redisConnection = TestMachineHasRedis.GetTestEnvironmentRedis();
 
             var testId = Guid.NewGuid();
             using (var basicRedis1 = new BasicRedisWrapper(redisConnection, false))

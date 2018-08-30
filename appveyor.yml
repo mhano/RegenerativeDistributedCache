@@ -22,6 +22,7 @@ install:
   - redis-64\tools\redis-server.exe --service-install
   - redis-64\tools\redis-server.exe --service-start
   - '@ECHO Redis Started'
+  - 'SET REDIS_CONFIGURATION_FOR_UNIT_TESTS=localhost'
 
 before_build:
 - nuget restore
