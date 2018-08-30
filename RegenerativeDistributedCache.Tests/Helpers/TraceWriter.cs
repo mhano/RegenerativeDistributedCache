@@ -34,7 +34,7 @@ using System.Linq;
 using System.Threading;
 using RegenerativeDistributedCache.Interfaces;
 
-namespace RegenerativeDistributedCache.Tests.Helpers
+namespace RegenDistCache.Tests.Helpers
 {
     internal class TraceWriter : ITraceWriter
     {

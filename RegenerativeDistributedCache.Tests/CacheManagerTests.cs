@@ -33,12 +33,13 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using RegenerativeDistributedCache.Tests.DynamicSkippableTests;
-using RegenerativeDistributedCache.Tests.Helpers;
+using RegenDistCache.Tests.DynamicSkippableTests;
+using RegenDistCache.Tests.Helpers;
+using RegenerativeDistributedCache;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace RegenerativeDistributedCache.Tests
+namespace RegenDistCache.Tests
 {
     public class CacheManagerTests
     {

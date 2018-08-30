@@ -34,7 +34,7 @@ using RegenerativeDistributedCache.Interfaces;
 using RegenerativeDistributedCache.Redis;
 using IDistributedLockFactory = RegenerativeDistributedCache.Interfaces.IDistributedLockFactory;
 
-namespace RegenerativeDistributedCache.Tests.Helpers
+namespace RegenDistCache.Tests.Helpers
 {
     /// <summary>
     /// Caution - disposing any instance of this (which has been setup to use the app domain level mock

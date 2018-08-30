@@ -10,7 +10,7 @@
     <ProjectGuid>{417146F0-8FE7-46BD-96C3-9A254ACC34E2}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>RegenerativeDistributedCache.Tests</RootNamespace>
+    <RootNamespace>RegenDistCache.Tests</RootNamespace>
     <AssemblyName>RegenerativeDistributedCache.Tests</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>

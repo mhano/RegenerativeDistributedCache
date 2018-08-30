@@ -35,8 +35,9 @@ using System.Runtime.Caching;
 using System.Text;
 using System.Threading.Tasks;
 using RegenerativeDistributedCache.Interfaces;
+using RegenerativeDistributedCache.SimpleHelpers;
 
-namespace RegenerativeDistributedCache.Tests.Helpers
+namespace RegenDistCache.Tests.Helpers
 {
     /// <summary>
     /// Caution - disposing any instance of this resets the entire (app domain local) mock of redis
@@ -86,7 +87,7 @@ namespace RegenerativeDistributedCache.Tests.Helpers
 
         public IDisposable CreateLock(string lockKey, TimeSpan lockExpiryTime)
         {
-            var lck = SimpleHelpers.NamedLock.CreateAndEnter($"{nameof(LocalMemMockOfRedis)}:{nameof(CreateLock)}:{lockKey}", 0);
+            var lck = NamedLock.CreateAndEnter($"{nameof(LocalMemMockOfRedis)}:{nameof(CreateLock)}:{lockKey}", 0);
 
             if (lck.IsLocked) return lck;
 

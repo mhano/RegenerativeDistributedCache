@@ -30,7 +30,7 @@
 using System;
 using RegenerativeDistributedCache.Redis;
 
-namespace RegenerativeDistributedCache.Tests.DynamicSkippableTests
+namespace RegenDistCache.Tests.DynamicSkippableTests
 {
     public class TestMachineHasRedis
     {

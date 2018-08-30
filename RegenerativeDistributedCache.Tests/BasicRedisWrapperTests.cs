@@ -5,12 +5,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using RegenerativeDistributedCache.Redis;
-using RegenerativeDistributedCache.Tests.DynamicSkippableTests;
-using RegenerativeDistributedCache.Tests.Helpers;
+using RegenDistCache.Tests.Helpers;
+using RegenDistCache.Tests.DynamicSkippableTests;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace RegenerativeDistributedCache.Tests
+namespace RegenDistCache.Tests
 {
     public class BasicRedisWrapperTests
     {

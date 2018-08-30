@@ -1,7 +1,7 @@
 ﻿using System;
 using Xunit;
 
-namespace RegenerativeDistributedCache.Tests.DynamicSkippableTests
+namespace RegenDistCache.Tests.DynamicSkippableTests
 {
     public class SkippableFactAttribute : FactAttribute
     {
