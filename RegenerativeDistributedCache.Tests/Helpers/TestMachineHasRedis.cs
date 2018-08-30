@@ -29,16 +29,22 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using RegenerativeDistributedCache.Redis;
 
 namespace RegenerativeDistributedCache.Tests.Helpers
 {
     public class TestMachineHasRedis
     {
-        private const string LocalRedis = "localhost:6379";
+        private const string LocalRedis = "localhost"; // :6379
+
+        private static readonly object LocalRedisTestSynch = new object();
+        private static bool _localRedisTested = false;
+        private static bool _localRedisAvailable = false;
 
         private static readonly Dictionary<string,string> TestMachinesWithRedisAccess = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase)
         {
-            // list of machines with access to a redis instance
+            // list of machines with access to a redis instance (allows you to skip the test and see approach)
             { "sydcn1012", LocalRedis },
         };
 
@@ -47,7 +53,59 @@ namespace RegenerativeDistributedCache.Tests.Helpers
         /// <returns></returns>
         public static bool GetRedisConnection(out string redisConnection, string machineName = null)
         {
-            return TestMachinesWithRedisAccess.TryGetValue(machineName ?? Environment.MachineName, out redisConnection);
+            return 
+                TestMachinesWithRedisAccess.TryGetValue(machineName ?? Environment.MachineName, out redisConnection)
+                || RedisAvailable(out redisConnection);
+        }
+
+        private static bool RedisAvailable(out string redisConnection)
+        {
+            redisConnection = LocalRedis;
+            if (_localRedisTested) return _localRedisAvailable;
+
+            lock (LocalRedisTestSynch)
+            {
+                if (_localRedisTested) return _localRedisAvailable;
+
+                try
+                {
+                    using (var basicRedis = new BasicRedisWrapper(redisConnection, false))
+                    {
+                        var topic = $"{typeof(TestMachineHasRedis).FullName}:Bus:{Guid.NewGuid():N}";
+                        var msg = $"testmsg{Guid.NewGuid():N}";
+
+                        string recvdMsg = null;
+                        basicRedis.Bus.Subscribe(topic, s => recvdMsg = s);
+                        basicRedis.Bus.Publish(topic, msg);
+
+                        using (var lck = basicRedis.Lock.CreateLock($"{typeof(TestMachineHasRedis).FullName}:Lock:{Guid.NewGuid():N}", TimeSpan.Zero))
+                        {
+                            var cacheKey = $"{typeof(TestMachineHasRedis).FullName}:Cache:{Guid.NewGuid():N}";
+                            var cacheVal = $"{typeof(TestMachineHasRedis).FullName}:Cache:{Guid.NewGuid():N}";
+                            basicRedis.Cache.StringSet(cacheKey, cacheVal, TimeSpan.FromSeconds(3));
+                            var cacheValGot = basicRedis.Cache.GetStringStart(cacheKey, 200);
+                            var cacheValGot2 = basicRedis.Cache.GetStringStart(cacheKey, 10);
+
+                            var end = DateTime.Now.AddSeconds(3);
+                            while (DateTime.Now < end && recvdMsg == null) Task.Delay(50).Wait();
+
+                            _localRedisAvailable = lck != null &&
+                                                 cacheValGot == cacheVal &&
+                                                 cacheVal.StartsWith(cacheValGot2) &&
+                                                 cacheValGot2.Length == 10 &&
+                                                 recvdMsg == msg;
+                        }
+                    }
+                }
+                catch
+                {
+                    _localRedisAvailable = false;
+                }
+
+                _localRedisTested = true;
+            }
+
+            return _localRedisAvailable;
         }
     }
 }

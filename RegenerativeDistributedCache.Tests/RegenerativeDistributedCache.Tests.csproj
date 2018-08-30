@@ -65,6 +65,7 @@
   <ItemGroup>
     <Compile Include="Helpers\DualTraceWriter .cs" />
     <Compile Include="Helpers\LocalMemMockOfRedis.cs" />
+    <Compile Include="RedisWrappersIfLocalRedisAvailableTests.cs" />
     <Compile Include="RegenerativeCacheManagerTests.cs" />
     <Compile Include="Helpers\RedisInterceptOrMock.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
