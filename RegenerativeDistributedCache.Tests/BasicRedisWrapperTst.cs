@@ -12,10 +12,10 @@ using Xunit.Abstractions;
 
 namespace RegenDistCache.Tests
 {
-    public class BasicRedisWrapperTests
+    public class BasicRedisWrapperTst
     {
         private readonly ITestOutputHelper _output;
-        public BasicRedisWrapperTests(ITestOutputHelper output)
+        public BasicRedisWrapperTst(ITestOutputHelper output)
         { _output = output; }
 
         [SkippableFact]

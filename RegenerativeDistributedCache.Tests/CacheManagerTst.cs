@@ -41,12 +41,12 @@ using Xunit.Abstractions;
 
 namespace RegenDistCache.Tests
 {
-    public class CacheManagerTests
+    public class CacheManagerTst
     {
         private static int _seq;
 
         private readonly ITestOutputHelper _output;
-        public CacheManagerTests(ITestOutputHelper output)
+        public CacheManagerTst(ITestOutputHelper output)
         { _output = output; }
 
         private string MockGenDelay(string val)
