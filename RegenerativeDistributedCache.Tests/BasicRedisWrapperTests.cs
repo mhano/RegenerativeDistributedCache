@@ -12,14 +12,14 @@ using Xunit.Abstractions;
 
 namespace RegenerativeDistributedCache.Tests
 {
-    public class RedisWrapperTests
+    public class BasicRedisWrapperTests
     {
         private readonly ITestOutputHelper _output;
-        public RedisWrapperTests(ITestOutputHelper output)
+        public BasicRedisWrapperTests(ITestOutputHelper output)
         { _output = output; }
 
         [SkippableFact]
-        public void RedisLockingWorks()
+        public void Locks()
         {
             var redisConnection = TestMachineHasRedis.GetTestEnvironmentRedis();
 
@@ -40,7 +40,7 @@ namespace RegenerativeDistributedCache.Tests
         }
 
         [SkippableFact]
-        public void RedisCachingWorks()
+        public void Caching()
         {
             var redisConnection = TestMachineHasRedis.GetTestEnvironmentRedis();
 
@@ -103,7 +103,7 @@ namespace RegenerativeDistributedCache.Tests
         }
 
         [SkippableFact]
-        public void RedisMessagingWorks()
+        public void Messaging()
         {
             var redisConnection = TestMachineHasRedis.GetTestEnvironmentRedis();
 

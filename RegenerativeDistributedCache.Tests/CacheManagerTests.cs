@@ -40,12 +40,12 @@ using Xunit.Abstractions;
 
 namespace RegenerativeDistributedCache.Tests
 {
-    public class RegenerativeCacheManagerTests
+    public class CacheManagerTests
     {
         private static int _seq;
 
         private readonly ITestOutputHelper _output;
-        public RegenerativeCacheManagerTests(ITestOutputHelper output)
+        public CacheManagerTests(ITestOutputHelper output)
         { _output = output; }
 
         private string MockGenDelay(string val)
@@ -55,7 +55,7 @@ namespace RegenerativeDistributedCache.Tests
         }
 
         [Fact]
-        public void MockedRedisSingleNodeGets()
+        public void SingleNodeGetsMockedRedis()
         {
             SingleNodeGetsInternal("mock", false);
         }
@@ -63,14 +63,14 @@ namespace RegenerativeDistributedCache.Tests
         [SkippableTheory]
         [InlineData(true)]
         [InlineData(false)]
-        public void LiveRedisOrSkipSingleNodeGets(bool useMultipleRedisConnections)
+        public void SingleNodeGets(bool connPerConcern)
         {
             var redisConnection = TestMachineHasRedis.GetTestEnvironmentRedis();
-            SingleNodeGetsInternal(redisConnection, useMultipleRedisConnections);
+            SingleNodeGetsInternal(redisConnection, connPerConcern);
         }
 
         [Fact]
-        public void MockedRedisMultiNodeGets()
+        public void MultiNodeGetsMockedRedis()
         {
             MultiNodeGetsInternal("mock", false);
         }
@@ -78,15 +78,15 @@ namespace RegenerativeDistributedCache.Tests
         [SkippableTheory]
         [InlineData(true)]
         [InlineData(false)]
-        public void LiveRedisOrSkipMultiNodeGets(bool useMultipleRedisConnections)
+        public void MultiNodeGets(bool connPerConcern)
         {
             var redisConnection = TestMachineHasRedis.GetTestEnvironmentRedis();
 
-            MultiNodeGetsInternal(redisConnection, useMultipleRedisConnections);
+            MultiNodeGetsInternal(redisConnection, connPerConcern);
         }
 
         [Fact]
-        public void MockedRedisNodesCompete()
+        public void NodesCompeteMockedRedis()
         {
             NodesCompeteInternal("mock", false);
         }
@@ -94,7 +94,7 @@ namespace RegenerativeDistributedCache.Tests
         [SkippableTheory]
         [InlineData(true)]
         [InlineData(false)]
-        public void LiveRedisNodesCompete(bool useMultipleRedisConnections)
+        public void NodesCompete(bool useMultipleRedisConnections)
         {
             var redisConnection = TestMachineHasRedis.GetTestEnvironmentRedis();
 
