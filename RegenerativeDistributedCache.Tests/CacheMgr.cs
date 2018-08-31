@@ -219,7 +219,7 @@ namespace RegenDistCache.Tests
                     Assert.NotNull(first100);
                     Assert.StartsWith(first10, first100);
 
-                    Thread.Sleep(3100);
+                    Thread.Sleep(3500);
 
                     // confirm cache has been regenerated in the background
                     Assert.Equal(2, ext.CacheSets.Count);
@@ -339,7 +339,7 @@ namespace RegenDistCache.Tests
                     Assert.StartsWith("t1n1_", node2Result1);
                     Assert.Equal(node2Result1, node2Result2);
 
-                    Thread.Sleep(3100);
+                    Thread.Sleep(3500);
 
                     // confirm cache has been regenerated in the background (on both nodes)
 
