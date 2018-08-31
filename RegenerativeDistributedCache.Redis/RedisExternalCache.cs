@@ -22,12 +22,24 @@ namespace RegenerativeDistributedCache.Redis
             _redisDatabase = redisDatabase;
         }
 
-        void IExternalCache.StringSet(string key, string val, TimeSpan absoluteExpiration)
+        /// <summary>
+        /// From RegenerativeDistributedCache -> IExternalCache - Store a value in cache for RegenerativeCacheManager
+        /// </summary>
+        /// <param name="key">Cache key (RegenerativeCacheManager adds a prefix including keyspace to concern specific keys given to it)</param>
+        /// <param name="val">value to store in cache (a serialised object)</param>
+        /// <param name="absoluteExpiration">Absolute time (relative to now) that the item is kept in cache.</param>
+        public void StringSet(string key, string val, TimeSpan absoluteExpiration)
         {
             _redisDatabase.StringSet(key, val, absoluteExpiration);
         }
 
-        string IExternalCache.StringGetWithExpiry(string key, out TimeSpan absoluteExpiry)
+        /// <summary>
+        /// From RegenerativeDistributedCache -> IExternalCache - Return the cached item with it's absolute absoluteExpiry time (relative to now).
+        /// </summary>
+        /// <param name="key">Cache key (RegenerativeCacheManager adds a prefix including keyspace to concern specific keys given to it)</param>
+        /// <param name="absoluteExpiry">Absolute absoluteExpiry time (relative to now)</param>
+        /// <returns>Null if not found or string value</returns>
+        public string StringGetWithExpiry(string key, out TimeSpan absoluteExpiry)
         {
             var result = _redisDatabase.StringGetWithExpiry(key);
             var validResult = result.Value.HasValue && result.Expiry.HasValue;
@@ -38,7 +50,13 @@ namespace RegenerativeDistributedCache.Redis
             return value;
         }
 
-        string IExternalCache.GetStringStart(string key, int length)
+        /// <summary>
+        /// From RegenerativeDistributedCache -> IExternalCache - Return the first n characters of the value of an item in cache
+        /// </summary>
+        /// <param name="key">Cache key (RegenerativeCacheManager adds a prefix including keyspace to concern specific keys given to it)</param>
+        /// <param name="length">Number of characters to read from the start of the stored value</param>
+        /// <returns>Null if not found or string value</returns>
+        public string GetStringStart(string key, int length)
         {
             var result = _redisDatabase.StringGetRange(key, 0, Math.Max(0, length - 1));
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using RegenerativeDistributedCache.Interfaces;
 using RegenerativeDistributedCache.Redis;
 using IDistributedLockFactory = RegenerativeDistributedCache.Interfaces.IDistributedLockFactory;
@@ -33,19 +34,24 @@ namespace RegenDistCache.Tests.Helpers
         /// Create an interceptor based on real redis connection(s) or a local in memory redis mock.
         /// Note: local in memory redis mock does not support "multiple connections" (there is no actual connecting going on)
         /// </summary>
-        /// <param name="redisConfiguration">redis connection config (e.g. "localhost:6379") or "mock"</param>
+        /// <param name="redisConfiguration">redis connection config (e.g. "localhost:6379") or "mock-{uniqueid}"</param>
         /// <param name="useMultipleRedisConnections">use a single redis connection vs multiple for different concerns (locking, caching, messaging)</param>
-        public RedisInterceptOrMock(string redisConfiguration = "mock", bool useMultipleRedisConnections = false)
+        public RedisInterceptOrMock(string redisConfiguration, bool useMultipleRedisConnections = false)
         {
-            if (redisConfiguration.ToLowerInvariant() == "mock")
+            if (redisConfiguration.ToLowerInvariant().StartsWith("mock-"))
             {
                 if (useMultipleRedisConnections)
                 {
                     throw new ArgumentException($"Mock redis and useMultipleRedisConnections is non-sensical");
                 }
 
+                if (redisConfiguration.ToLowerInvariant() == "mock-")
+                {
+                    throw new ArgumentException($"Mock redis id should be supplied (per fake redis instance)");
+                }
+
                 _basicRedisWrapper = null;
-                _redisMock = new LocalMemMockOfRedis();
+                _redisMock = LocalMemMockOfRedis.Create(redisConfiguration);
             }
             else
             {

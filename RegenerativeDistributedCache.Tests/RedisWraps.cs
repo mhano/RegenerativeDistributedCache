@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using RegenerativeDistributedCache.Redis;
 using RegenDistCache.Tests.DynamicSkippableTests;
@@ -89,7 +90,7 @@ namespace RegenDistCache.Tests
                 Assert.Null(missingVal);
                 Assert.Null(missingSubVal);
 
-                Task.Delay(3500).Wait();
+                Thread.Sleep(3500);
                 var expiredValNull = basicRedis2.Cache.StringGetWithExpiry(cacheKey, out TimeSpan expiredValExpiry);
                 var expiredSubValNull = basicRedis2.Cache.GetStringStart(cacheKey, 10);
 
@@ -125,7 +126,7 @@ namespace RegenDistCache.Tests
                 var waitForMessage = new Action<List<string>, string>((bag, msg) =>
                 {
                     var end = DateTime.Now.AddSeconds(1);
-                    while (!bag.Contains(msg) && DateTime.Now < end) Task.Delay(100).Wait();
+                    while (!bag.Contains(msg) && DateTime.Now < end) Thread.Sleep(100);
                 });
 
                 var msgsFromB1Sub1T1 = new List<string>();
