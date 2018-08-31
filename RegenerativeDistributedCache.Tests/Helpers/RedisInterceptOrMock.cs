@@ -56,7 +56,7 @@ namespace RegenDistCache.Tests.Helpers
 
         public void Dispose()
         {
-            _basicRedisWrapper?.Dispose();
+            (_basicRedisWrapper as IDisposable)?.Dispose();
             _redisMock?.Dispose();
         }
 
