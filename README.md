@@ -1,19 +1,20 @@
 # ![RegenerativeDistributedCache Icon](https://raw.githubusercontent.com/mhano/RegenerativeDistributedCache/master/docs/Icon.png) RegenerativeDistributedCache
 
-### Status
-
 A cache that supports scheduling the regeneration of cache items in the background ahead of their expiry and manages this across a farm of web/service nodes minimising duplicated cache value generation work.
 
 Requires an external (network) cache, a fan out pub/sub message bus, and a distributed locking mechanism (all three of these can be provided by Redis or you might use alternatives for one or more of these such as RabbitMq for messaging). Basic Redis implementations of these are provided in RegenerativeCacheManager.Redis.
 
-* Packages:
-  * [NuGet.org -> RegenerativeDistributedCache](https://www.nuget.org/packages/RegenerativeDistributedCache/)
-  * [NuGet.org -> RegenerativeDistributedCache.Redis](https://www.nuget.org/packages/RegenerativeDistributedCache.Redis/)
-* Website: [GitHub -> mhano/RegenerativeDistributedCache](https://github.com/mhano/RegenerativeDistributedCache)
-* Builds:
-  * [Appveyor -> mhano/regenerativedistributedcache](https://ci.appveyor.com/project/mhano/regenerativedistributedcache)
-    [![Build status](https://ci.appveyor.com/api/projects/status/l8sopd19phi026k6/branch/master?svg=true)](https://ci.appveyor.com/project/mhano/regenerativedistributedcache/branch/master)
+Links
+* Website: [GitHub -> mhano/RegenerativeDistributedCache](https://github.com/mhano/RegenerativeDistributedCache) (here)
 * License: ["MIT" License Here](https://raw.githubusercontent.com/mhano/RegenerativeDistributedCache/master/LICENSE), reference: [[OpenSource.org -> MIT](https://opensource.org/licenses/mit)]
+
+Packages
+* [NuGet.org -> RegenerativeDistributedCache](https://www.nuget.org/packages/RegenerativeDistributedCache/)
+* [NuGet.org -> RegenerativeDistributedCache.Redis](https://www.nuget.org/packages/RegenerativeDistributedCache.Redis/)
+
+Builds
+* [Appveyor -> mhano/regenerativedistributedcache](https://ci.appveyor.com/project/mhano/regenerativedistributedcache)
+![Build status](https://ci.appveyor.com/api/projects/status/l8sopd19phi026k6/branch/master?svg=true)
 
 ## RegenerativeDistributedCache.Redis
 
