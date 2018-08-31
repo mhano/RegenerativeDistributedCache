@@ -115,10 +115,6 @@ using(var awaiter = _correlatedAwaitManager.CreateAwaiter(key))
 return GetSomething(key);
 ```
 
-## MemoryFrontedExternalCache
-
-Provides a memory front to a network cache so that multiple retrieves on a node only results in a single retrieve from the network cache store (such as Redis).
-
 *used in RegenerativeCacheManager*
 
 ## License (MIT)
@@ -130,11 +126,3 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
 The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-### Links
-* Packages:
-  * [NuGet.org -> RegenerativeDistributedCache](https://www.nuget.org/packages/RegenerativeDistributedCache/)
-  * [NuGet.org -> RegenerativeDistributedCache.Redis](https://www.nuget.org/packages/RegenerativeDistributedCache.Redis/)
-* Website: [GitHub -> mhano/RegenerativeDistributedCache](https://github.com/mhano/RegenerativeDistributedCache)
-* Builds: [Appveyor -> mhano/regenerativedistributedcache](https://ci.appveyor.com/project/mhano/regenerativedistributedcache)
-* License: ["MIT" License Here](https://raw.githubusercontent.com/mhano/RegenerativeDistributedCache/master/LICENSE), reference: [[OpenSource.org -> MIT](https://opensource.org/licenses/mit)]

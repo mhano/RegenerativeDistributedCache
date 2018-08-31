@@ -1,51 +1,24 @@
-﻿#region *   License     *
-/*
-    RegenerativeDistributedCache - Tests
-
-    Copyright (c) 2018 Mhano Harkness
-
-    Permission is hereby granted, free of charge, to any person obtaining a copy
-    of this software and associated documentation files (the "Software"), to deal
-    in the Software without restriction, including without limitation the rights
-    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-    copies of the Software, and to permit persons to whom the Software is
-    furnished to do so, subject to the following conditions:
-
-    The above copyright notice and this permission notice shall be included in all
-    copies or substantial portions of the Software.
-
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-    SOFTWARE.
-
-    License: https://opensource.org/licenses/mit
-    Website: https://github.com/mhano/RegenerativeDistributedCache
- */
-#endregion
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using RegenerativeDistributedCache.Tests.Helpers;
+using RegenDistCache.Tests.DynamicSkippableTests;
+using RegenDistCache.Tests.Helpers;
+using RegenerativeDistributedCache;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace RegenerativeDistributedCache.Tests
+namespace RegenDistCache.Tests
 {
-    public class RegenerativeCacheManagerTests
+    public class CacheMgr
     {
         private static int _seq;
 
         private readonly ITestOutputHelper _output;
-        public RegenerativeCacheManagerTests(ITestOutputHelper output)
-        { this._output = output; }
+        public CacheMgr(ITestOutputHelper output)
+        { _output = output; }
 
         private string MockGenDelay(string val)
         {
@@ -54,39 +27,52 @@ namespace RegenerativeDistributedCache.Tests
         }
 
         [Fact]
-        public void MockedRedisSingleNodeGets()
+        public void SingleNodeGetsMockedRedis()
         {
             SingleNodeGetsInternal("mock", false);
         }
 
+        [SkippableTheory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void SingleNodeGets(bool connPerType)
+        {
+            var redisConnection = TestMachineHasRedis.GetTestEnvironmentRedis();
+            SingleNodeGetsInternal(redisConnection, connPerType);
+        }
+
         [Fact]
-        public void MockedRedisMultiNodeGets()
+        public void MultiNodeGetsMockedRedis()
         {
             MultiNodeGetsInternal("mock", false);
         }
 
-
-        [Theory]
+        [SkippableTheory]
         [InlineData(true)]
         [InlineData(false)]
-        public void LiveRedisOrSkipSingleNodeGets(bool useMultipleRedisConnections)
+        public void MultiNodeGets(bool connPerType)
         {
-            if (TestMachineHasRedis.GetRedisConnection(out string redisConnection))
-            {
-                SingleNodeGetsInternal(redisConnection, useMultipleRedisConnections);
-            }
+            var redisConnection = TestMachineHasRedis.GetTestEnvironmentRedis();
+
+            MultiNodeGetsInternal(redisConnection, connPerType);
         }
 
-        [Theory]
+        [Fact]
+        public void NodesCompeteMockedRedis()
+        {
+            NodesCompeteInternal("mock", false);
+        }
+
+        [SkippableTheory]
         [InlineData(true)]
         [InlineData(false)]
-        public void LiveRedisOrSkipMultiNodeGets(bool useMultipleRedisConnections)
+        public void NodesCompete(bool connPerType)
         {
-            if (TestMachineHasRedis.GetRedisConnection(out string redisConnection))
-            {
-                MultiNodeGetsInternal(redisConnection, useMultipleRedisConnections);
-            }
+            var redisConnection = TestMachineHasRedis.GetTestEnvironmentRedis();
+
+            NodesCompeteInternal(redisConnection, connPerType);
         }
+
 
         private void SingleNodeGetsInternal(string redisConnection, bool useMultipleRedisConnections, string writeTraceFile = null)
         {
@@ -304,6 +290,95 @@ namespace RegenerativeDistributedCache.Tests
 
                 // tw.GetOutput().ToList().ForEach(t => output.WriteLine(t));
                 if(writeTraceFile != null) File.WriteAllLines(writeTraceFile, dtw.GetOutput());
+            }
+        }
+
+        private void NodesCompeteInternal(string redisConnection, bool useMultipleRedisConnections, string writeTraceFile = null)
+        {
+            var testRunKeyspace = $"testKs{DateTime.Now:mmssfffffff}s{Interlocked.Increment(ref _seq)}";
+
+            var dtw = new DualTraceWriter();
+            using (var node1Ext = new RedisInterceptOrMock(redisConnection, useMultipleRedisConnections))
+            using (var node1Cache = new RegenerativeCacheManager(testRunKeyspace, node1Ext.Cache, node1Ext.Lock, node1Ext.Bus, dtw.T1)
+            {
+                CacheExpiryToleranceSeconds = 1.5,
+                MinimumForwardSchedulingSeconds = 1,
+                TriggerDelaySeconds = 1,
+                FarmClockToleranceSeconds = 0.1,
+            })
+            using (var node2Ext = new RedisInterceptOrMock(redisConnection, useMultipleRedisConnections))
+            using (var node2Cache = new RegenerativeCacheManager(testRunKeyspace, node2Ext.Cache, node2Ext.Lock, node2Ext.Bus, dtw.T2)
+            {
+                CacheExpiryToleranceSeconds = 1.5,
+                MinimumForwardSchedulingSeconds = 1,
+                TriggerDelaySeconds = 1,
+                FarmClockToleranceSeconds = 0.1,
+            })
+            {
+                var inactiveRetention = TimeSpan.FromSeconds(9);
+                var regenerationInterval = TimeSpan.FromSeconds(3);
+
+                bool seenN1 = false, seenN2 = false;
+                var start = DateTime.Now;
+                var end = start.AddSeconds(120);
+                var rnd = new Random();
+                bool nodeOrder = false;
+
+                string node1Result1 = "", node2Result1 = "";
+
+                var getFrom1 = new Action(() => node1Result1 = node1Cache.GetOrAdd("test1", () => MockGenDelay($"t1n1_{Guid.NewGuid():N}"), inactiveRetention, regenerationInterval));
+                var getFrom2 = new Action(() => node2Result1 = node2Cache.GetOrAdd("test1", () => MockGenDelay($"t1n2_{Guid.NewGuid():N}"), inactiveRetention, regenerationInterval));
+
+                var results = new List<Tuple<string, string>>();
+                do
+                {
+                    // ReSharper disable once AssignmentInConditionalExpression
+                    if (nodeOrder = !nodeOrder)
+                    {
+                        getFrom1(); getFrom2();
+                    }
+                    else
+                    {
+                        getFrom2(); getFrom1();
+                    }
+
+                    results.Add(new Tuple<string, string>(node2Result1, node2Result1));
+
+                    if (node2Result1.StartsWith("t1n1") || node1Result1.StartsWith("t1n1"))
+                    {
+                        seenN1 = true;
+                    }
+                    if (node2Result1.StartsWith("t1n2") || node1Result1.StartsWith("t1n2"))
+                    {
+                        seenN2 = true;
+                    }
+
+                    // randomise the delay to randomise the node order switches
+                    Task.Delay(rnd.Next(50, 100)).Wait();
+
+                } while (DateTime.Now < end && (!seenN1 || !seenN2));
+
+                var countOfEqual = results.Count(r => r.Item1 == r.Item2) * 1.0;
+
+                var probabilityMsg = $"{end.Subtract(start).TotalSeconds:0} seconds means " +
+                                     $"{(int)(end.Subtract(start).TotalSeconds / regenerationInterval.TotalSeconds)} chances to compete, " +
+                                     $"chances of not seeing results from both nodes is approximately " +
+                                     $"2 in (2^{(int)(end.Subtract(start).TotalSeconds / regenerationInterval.TotalSeconds)}), " +
+                                     $"i.e. 1 in {Math.Pow(2, (int)(end.Subtract(start).TotalSeconds / regenerationInterval.TotalSeconds)) / 2}.";
+
+
+                _output.WriteLine($"90% of results should be identical, {(countOfEqual / results.Count) * 100:0}% were ({countOfEqual} / {results.Count}).");
+                _output.WriteLine(probabilityMsg);
+
+                Assert.True(results.Count > 19,
+                    $"Shouldn't see any cache regeneration / node competition for 2 to 3 seconds. Saw different results in only {DateTime.Now.Subtract(start).TotalMilliseconds*1000:#,##0.0}us.");
+
+                Assert.True(countOfEqual / results.Count > 0.9,
+                    $"90% of results should be identical, only {(countOfEqual / results.Count)*100:0}% were ({countOfEqual} / {results.Count}).");
+
+                var errmsg = $"Did not see generation on {{0}} - {probabilityMsg}";
+                Assert.True(seenN1, string.Format(errmsg, "node1"));
+                Assert.True(seenN2, string.Format(errmsg, "node2"));
             }
         }
     }

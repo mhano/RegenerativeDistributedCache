@@ -1,42 +1,12 @@
-﻿#region *   License     *
-/*
-    RegenerativeDistributedCache - Tests
-
-    Copyright (c) 2018 Mhano Harkness
-
-    Permission is hereby granted, free of charge, to any person obtaining a copy
-    of this software and associated documentation files (the "Software"), to deal
-    in the Software without restriction, including without limitation the rights
-    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-    copies of the Software, and to permit persons to whom the Software is
-    furnished to do so, subject to the following conditions:
-
-    The above copyright notice and this permission notice shall be included in all
-    copies or substantial portions of the Software.
-
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-    SOFTWARE.
-
-    License: https://opensource.org/licenses/mit
-    Website: https://github.com/mhano/RegenerativeDistributedCache
- */
-#endregion
-
-using System;
+﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Caching;
-using System.Text;
 using System.Threading.Tasks;
 using RegenerativeDistributedCache.Interfaces;
+using RegenerativeDistributedCache.SimpleHelpers;
 
-namespace RegenerativeDistributedCache.Tests.Helpers
+namespace RegenDistCache.Tests.Helpers
 {
     /// <summary>
     /// Caution - disposing any instance of this resets the entire (app domain local) mock of redis
@@ -71,10 +41,10 @@ namespace RegenerativeDistributedCache.Tests.Helpers
             _memoryCache.Set(key, new Tuple<DateTime, string>(expiry, val), expiry);
         }
 
-        public string StringGetWithExpiry(string key, out TimeSpan expiry)
+        public string StringGetWithExpiry(string key, out TimeSpan absoluteExpiry)
         {
             var ci = (Tuple<DateTime, string>)_memoryCache.Get(key);
-            expiry = ci?.Item1.Subtract(DateTime.Now) ?? TimeSpan.MinValue;
+            absoluteExpiry = ci?.Item1.Subtract(DateTime.Now) ?? TimeSpan.MinValue;
             return ci?.Item2;
         }
 
@@ -86,7 +56,7 @@ namespace RegenerativeDistributedCache.Tests.Helpers
 
         public IDisposable CreateLock(string lockKey, TimeSpan lockExpiryTime)
         {
-            var lck = SimpleHelpers.NamedLock.CreateAndEnter($"{nameof(LocalMemMockOfRedis)}:{nameof(CreateLock)}:{lockKey}", 0);
+            var lck = NamedLock.CreateAndEnter($"{nameof(LocalMemMockOfRedis)}:{nameof(CreateLock)}:{lockKey}", 0);
 
             if (lck.IsLocked) return lck;
 

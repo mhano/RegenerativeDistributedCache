@@ -1,42 +1,28 @@
-﻿#region *   License     *
-/*
-    RegenerativeDistributedCache
-
-    Copyright (c) 2018 Mhano Harkness
-
-    Permission is hereby granted, free of charge, to any person obtaining a copy
-    of this software and associated documentation files (the "Software"), to deal
-    in the Software without restriction, including without limitation the rights
-    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-    copies of the Software, and to permit persons to whom the Software is
-    furnished to do so, subject to the following conditions:
-
-    The above copyright notice and this permission notice shall be included in all
-    copies or substantial portions of the Software.
-
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-    SOFTWARE.
-
-    License: https://opensource.org/licenses/mit
-    Website: https://github.com/mhano/RegenerativeDistributedCache
- */
-#endregion
-
-using System;
+﻿using System;
 
 namespace RegenerativeDistributedCache.Interfaces
 {
     /// <summary>
     /// Provide access to a non-durable fan out pub/sub mechanism (such as redis or rabbitmq)
+    /// as required by RegenerativeCacheManager. Implement this interface to use an alternative
+    /// message bus (such as RabbitMQ).
+    /// A Redis implementation is provided in RegenerativeDistributedCache.Redis.
     /// </summary>
     public interface IFanOutBus
     {
+        /// <summary>
+        /// Create a non durable subscription to a topic based on a key. The method must only return once the subscription is created.
+        /// </summary>
+        /// <param name="topicKey">A unique key representing a topic (shared amongst a concern / group of subscribers across multiple nodes)</param>
+        /// <param name="messageReceive">The action to call (synchronously or asynchronously upon receiving a relevant message [based on topic key]).</param>
         void Subscribe(string topicKey, Action<string> messageReceive);
+
+        /// <summary>
+        /// Publish a message to all listeners that have subscribed to the topic key.
+        /// This method may be implemented synchronously or asynchronously under the covers.
+        /// </summary>
+        /// <param name="topicKey">A unique key representing a topic (shared amongst a concern / group of subscribers across multiple nodes)</param>
+        /// <param name="value">A string message to send to all subscribers</param>
         void Publish(string topicKey, string value);
     }
 }

@@ -16,6 +16,14 @@ assembly_info:
   assembly_file_version: "{version}"
   assembly_informational_version: "{version}"
 
+install:
+  # Install the Redis and set environment variable to force tests to fail if redis not present
+  - nuget install redis-64 -excludeversion
+  - redis-64\tools\redis-server.exe --service-install
+  - redis-64\tools\redis-server.exe --service-start
+  - '@ECHO Redis Started'
+  - 'SET REDIS_CONFIGURATION_FOR_UNIT_TESTS=localhost:6379'
+
 before_build:
 - nuget restore
 

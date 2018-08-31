@@ -1,45 +1,36 @@
-﻿#region *   License     *
-/*
-    RegenerativeDistributedCache
-
-    Copyright (c) 2018 Mhano Harkness
-
-    Permission is hereby granted, free of charge, to any person obtaining a copy
-    of this software and associated documentation files (the "Software"), to deal
-    in the Software without restriction, including without limitation the rights
-    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-    copies of the Software, and to permit persons to whom the Software is
-    furnished to do so, subject to the following conditions:
-
-    The above copyright notice and this permission notice shall be included in all
-    copies or substantial portions of the Software.
-
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-    SOFTWARE.
-
-    License: https://opensource.org/licenses/mit
-    Website: https://github.com/mhano/RegenerativeDistributedCache
- */
-#endregion
-
-using System;
+﻿using System;
 
 namespace RegenerativeDistributedCache.Interfaces
 {
     /// <summary>
-    /// Represents and external cache (such as redis)
+    /// Represents and external cache (such as redis) as required by RegenerativeCacheManager.
+    /// Implement this interface to use an alternative underlying network/distributed caching 
+    /// mechanism. A Redis implementation is provided in RegenerativeDistributedCache.Redis.
     /// </summary>
     public interface IExternalCache
     {
+        /// <summary>
+        /// Store a value in cache for RegenerativeCacheManager
+        /// </summary>
+        /// <param name="key">Cache key (RegenerativeCacheManager adds a prefix including keyspace to concern specific keys given to it)</param>
+        /// <param name="val">value to store in cache (a serialised object)</param>
+        /// <param name="absoluteExpiration">Absolute time (relative to now) that the item is kept in cache.</param>
         void StringSet(string key, string val, TimeSpan absoluteExpiration);
 
-        string StringGetWithExpiry(string key, out TimeSpan expiry);
+        /// <summary>
+        /// Return the cached item with it's absolute absoluteExpiry time (relative to now).
+        /// </summary>
+        /// <param name="key">Cache key (RegenerativeCacheManager adds a prefix including keyspace to concern specific keys given to it)</param>
+        /// <param name="absoluteExpiry">Absolute absoluteExpiry time (relative to now)</param>
+        /// <returns>Null if not found or string value</returns>
+        string StringGetWithExpiry(string key, out TimeSpan absoluteExpiry);
 
+        /// <summary>
+        /// Return the first n characters of the value of an item in cache
+        /// </summary>
+        /// <param name="key">Cache key (RegenerativeCacheManager adds a prefix including keyspace to concern specific keys given to it)</param>
+        /// <param name="length">Number of characters to read from the start of the stored value</param>
+        /// <returns>Null if not found or string value</returns>
         string GetStringStart(string key, int length);
     }
 }
