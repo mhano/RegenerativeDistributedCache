@@ -4,25 +4,33 @@ using RegenerativeDistributedCache.Interfaces;
 
 namespace RegenerativeDistributedCache.Redis
 {
+    /// <summary>
+    /// Wraps RedLock / StackExchange Redis client library in interface required by 
+    /// RegenerativeCacheManager.
+    /// </summary>
     public class RedisDistributedLockFactory : IDistributedLockFactory, IDisposable
     {
-        private readonly RedLockFactory _redLockFactory;
+        private readonly RedLockNet.IDistributedLockFactory _redLockFactory;
 
-        public RedisDistributedLockFactory(RedLockFactory redLockFactory)
+        /// <summary>
+        /// Create an instance based on a RedLock.Net lock factory.
+        /// </summary>
+        /// <param name="redLockFactory">RedLock.Net lock factory (disposed on dispose)</param>
+        public RedisDistributedLockFactory(RedLockNet.IDistributedLockFactory redLockFactory)
         {
             _redLockFactory = redLockFactory;
         }
 
-        public IDisposable CreateLock(string lockKey, TimeSpan lockExpiryTime)
+        IDisposable IDistributedLockFactory.CreateLock(string lockKey, TimeSpan lockExpiryTime)
         {
             var redLock = _redLockFactory.CreateLock(lockKey, lockExpiryTime);
 
             return redLock.IsAcquired ? redLock : null;
         }
 
-        public void Dispose()
+        void IDisposable.Dispose()
         {
-            _redLockFactory?.Dispose();
+            (_redLockFactory as IDisposable)?.Dispose();
         }
     }
 }

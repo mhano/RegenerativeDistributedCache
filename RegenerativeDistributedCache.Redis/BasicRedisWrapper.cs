@@ -21,14 +21,25 @@ namespace RegenerativeDistributedCache.Redis
         private RedisExternalCache _redisExternalCache;
         private RedisFanOutBus _redisFanOutBus;
 
+        /// <summary>
+        /// Cache interface for RegenerativeCacheManager
+        /// </summary>
         public IExternalCache Cache => _redisExternalCache;
+
+        /// <summary>
+        /// Lock interface for RegenerativeCacheManager.
+        /// </summary>
         public IDistributedLockFactory Lock => _redisDistributedLockFactory;
+
+        /// <summary>
+        /// Message bus interface for RegenerativeCacheManager.
+        /// </summary>
         public IFanOutBus Bus => _redisFanOutBus;
 
         /// <summary>
-        /// Uses a single redis connection for caching, locking and messaging
+        /// Uses a single redis connection for caching, locking and messaging.
         /// </summary>
-        /// <param name="redisConfiguration">Redis connection string. e.g. "localhost:6379" </param>
+        /// <param name="redisConfiguration">Redis connection string. e.g. "localhost:6379"</param>
         /// <param name="useMultipleRedisConnections">Uses a single redis connection for caching, locking and messaging or use seperate connections for each.</param>
         public BasicRedisWrapper(string redisConfiguration, bool useMultipleRedisConnections = false)
         {
@@ -77,9 +88,9 @@ namespace RegenerativeDistributedCache.Redis
             _redisFanOutBus = new RedisFanOutBus(messagingConnection.GetSubscriber());
         }
 
-        public void Dispose()
+        void IDisposable.Dispose()
         {
-            _redisDistributedLockFactory?.Dispose();
+            (_redisDistributedLockFactory as IDisposable)?.Dispose();
         }
     }
 }

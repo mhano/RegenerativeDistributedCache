@@ -4,21 +4,30 @@ using StackExchange.Redis;
 
 namespace RegenerativeDistributedCache.Redis
 {
+    /// <summary>
+    /// Provides a redis implemention of the external/network cache interface required 
+    /// by RegenerativeCacheManager.
+    /// </summary>
     public class RedisExternalCache : IExternalCache
     {
         private readonly IDatabase _redisDatabase;
 
+        /// <summary>
+        /// Provides a redis implemention of the external/network cache interface required 
+        /// by RegenerativeCacheManager based on provided StackExchange.Redis IDatabase provided.
+        /// </summary>
+        /// <param name="redisDatabase">Redis database/connection to use.</param>
         public RedisExternalCache(IDatabase redisDatabase)
         {
             _redisDatabase = redisDatabase;
         }
 
-        public void StringSet(string key, string val, TimeSpan absoluteExpiration)
+        void IExternalCache.StringSet(string key, string val, TimeSpan absoluteExpiration)
         {
             _redisDatabase.StringSet(key, val, absoluteExpiration);
         }
 
-        public string StringGetWithExpiry(string key, out TimeSpan absoluteExpiry)
+        string IExternalCache.StringGetWithExpiry(string key, out TimeSpan absoluteExpiry)
         {
             var result = _redisDatabase.StringGetWithExpiry(key);
             var validResult = result.Value.HasValue && result.Expiry.HasValue;
@@ -29,7 +38,7 @@ namespace RegenerativeDistributedCache.Redis
             return value;
         }
 
-        public string GetStringStart(string key, int length)
+        string IExternalCache.GetStringStart(string key, int length)
         {
             var result = _redisDatabase.StringGetRange(key, 0, Math.Max(0, length - 1));
 
