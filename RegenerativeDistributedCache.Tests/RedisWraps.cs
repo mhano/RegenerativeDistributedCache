@@ -1,21 +1,17 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using RegenerativeDistributedCache.Redis;
-using RegenDistCache.Tests.Helpers;
 using RegenDistCache.Tests.DynamicSkippableTests;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace RegenDistCache.Tests
 {
-    public class BasicRedisWrapperTst
+    public class RedisWraps
     {
         private readonly ITestOutputHelper _output;
-        public BasicRedisWrapperTst(ITestOutputHelper output)
+        public RedisWraps(ITestOutputHelper output)
         { _output = output; }
 
         [SkippableFact]

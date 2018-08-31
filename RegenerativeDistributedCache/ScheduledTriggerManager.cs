@@ -1,44 +1,29 @@
-﻿#region *   License     *
-/*
-    RegenerativeDistributedCache - ScheduledTriggerManager
-
-    Copyright (c) 2018 Mhano Harkness
-
-    Permission is hereby granted, free of charge, to any person obtaining a copy
-    of this software and associated documentation files (the "Software"), to deal
-    in the Software without restriction, including without limitation the rights
-    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-    copies of the Software, and to permit persons to whom the Software is
-    furnished to do so, subject to the following conditions:
-
-    The above copyright notice and this permission notice shall be included in all
-    copies or substantial portions of the Software.
-
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-    SOFTWARE.
-
-    License: https://opensource.org/licenses/mit
-    Website: https://github.com/mhano/RegenerativeDistributedCache
- */
-#endregion
-
-using System;
+﻿using System;
 using System.Runtime.Caching;
 using System.Threading.Tasks;
 using RegenerativeDistributedCache.Interfaces;
 
 namespace RegenerativeDistributedCache
 {
+    /// <summary>
+    /// Manages the triggering of a callback at a certain interval for a sliding amount of time
+    /// based on explicitly provide access information. Used in RegenerativeCacheManager to trigger
+    /// background re-generation of cache values.
+    /// </summary>
     public class ScheduledTriggerManager : IDisposable
     {
         private readonly ITraceWriter _traceWriter;
         private readonly MemoryCache _memoryCache;
 
+        /// <summary>
+        /// Create a ScheduledTriggerManager for a certain keyspace. Creates a MemoryCache
+        /// named $"ScheduledTriggerManager_{keyspace}" (.net config can be used to congfigure
+        /// the memory cache if necesarry but usually not).
+        /// Schedules the callback once per callback interval regardless of how long the callback
+        /// takes to run.
+        /// </summary>
+        /// <param name="keyspace">Used to name the underlying memory cachce.</param>
+        /// <param name="traceWriter">For detailed trace output.</param>
         public ScheduledTriggerManager(string keyspace, ITraceWriter traceWriter = null)
         {
             _traceWriter = traceWriter;
@@ -71,7 +56,17 @@ namespace RegenerativeDistributedCache
         /// </summary>
         public double TriggerDelaySeconds { get; set; } = 1;
 
-        public void EnsureTriggerScheduled(string key, Action callbackAction, TimeSpan maxInactiveRetention, TimeSpan callbackInterval, DateTime prevCallbackStartTimeUtc, DateTime? lastActive = null, string traceId = null)
+        /// <summary>
+        /// Ensure a scheduled trigger is setup for the callbacks based on a unique key.
+        /// </summary>
+        /// <param name="key">Unique key of scheduled trigger / item.</param>
+        /// <param name="callbackAction">Action to call back at specified interval.</param>
+        /// <param name="maxInactiveRetention">Amount of time to continue performing call-backs after UpdateLastActivity is called.</param>
+        /// <param name="callbackInterval">Frequency with which to perform callback and schedule next callback.</param>
+        /// <param name="prevCallbackStartTimeUtc">The time the last call to callback, schedules the next callback from the start time of the previous callback/generation of a value.</param>
+        /// <param name="lastActiveUtc">Optional - date/time of last activity seen (must be in utc).</param>
+        /// <param name="traceId">Optional traceId for diagnostics.</param>
+        public void EnsureTriggerScheduled(string key, Action callbackAction, TimeSpan maxInactiveRetention, TimeSpan callbackInterval, DateTime prevCallbackStartTimeUtc, DateTime? lastActiveUtc = null, string traceId = null)
         {
             _traceWriter?.Write($"{nameof(ScheduledTriggerManager)}: {nameof(EnsureTriggerScheduled)}: TraceId:{traceId}: Key:{key}");
 
@@ -98,7 +93,7 @@ namespace RegenerativeDistributedCache
 
                 var triggerInfo = new TriggerInfo
                 {
-                    LastActive = lastActive ?? DateTime.UtcNow,
+                    LastActive = lastActiveUtc ?? DateTime.UtcNow,
                     TargetCallbackTime = logicalStartTime,
                     CallBack = callbackAction,
                     MaxInactiveRetention = maxInactiveRetention,
@@ -126,6 +121,12 @@ namespace RegenerativeDistributedCache
             }
         }
 
+        /// <summary>
+        /// Notify the ScheduledTriggerManager that the item being managed has been accessed.
+        /// </summary>
+        /// <param name="key">Unique key of scheduled trigger / item.</param>
+        /// <param name="traceId">Optional traceId for diagnostics.</param>
+        /// <returns>True if an active scheduled trigger was updated false if none was found (based on the key).</returns>
         public bool UpdateLastActivity(string key, string traceId = null)
         {
             var start = DateTime.Now;
@@ -199,6 +200,9 @@ namespace RegenerativeDistributedCache
             return _memoryCache.Add(key, triggerInfo, policy);
         }
 
+        /// <summary>
+        /// IDisposable as underlying MemoryCache should be disposed.
+        /// </summary>
         public void Dispose()
         {
             _memoryCache?.Dispose();

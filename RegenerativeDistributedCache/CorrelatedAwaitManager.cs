@@ -1,33 +1,5 @@
-﻿#region *   License     *
-/*
-    RegenerativeDistributedCache - CorrelatedAwaitManager
-
-    Copyright (c) 2018 Mhano Harkness
-
-    Permission is hereby granted, free of charge, to any person obtaining a copy
-    of this software and associated documentation files (the "Software"), to deal
-    in the Software without restriction, including without limitation the rights
-    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-    copies of the Software, and to permit persons to whom the Software is
-    furnished to do so, subject to the following conditions:
-
-    The above copyright notice and this permission notice shall be included in all
-    copies or substantial portions of the Software.
-
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-    SOFTWARE.
-
-    License: https://opensource.org/licenses/mit
-    Website: https://github.com/mhano/RegenerativeDistributedCache
- */
-#endregion
-
-using System;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -64,13 +36,22 @@ namespace RegenerativeDistributedCache
     /// <typeparam name="TKey">The type of key (typically guid/string/int etc.) used to correlate the message to waiters.</typeparam>
     public class CorrelatedAwaitManager<TMessage, TKey>
     {
-        private readonly Dictionary<TKey, HashSet<CorrelatedAwaiter>> _awaitedNotifications = new Dictionary<TKey, HashSet<CorrelatedAwaiter>>();
+        private readonly ConcurrentDictionary<TKey, HashSet<CorrelatedAwaiter>> _awaitedNotifications = new ConcurrentDictionary<TKey, HashSet<CorrelatedAwaiter>>();
 
         private readonly Func<TMessage, TKey> _getKeyFunc;
         private readonly ITraceWriter _traceWriter;
 
         private readonly string _cacheKeyPrefixNamedLocks;
 
+        /// <summary>
+        /// Create an instance of a correlated await manager, typically one is attached to a particular topic
+        /// from a fan out message bus subscription.
+        /// </summary>
+        /// <param name="getKey">
+        ///     Function to return TKey from TMessage (when a message is received the key is used to determine who is notified).
+        ///     Typically a CASE SENSITIVE string. Internally a ConcurrentDictionary&lt;TKey,...&gt; is used with default comparison.
+        /// </param>
+        /// <param name="traceWriter">Optional trace writer to receive detailed diagnostic tracing.</param>
         public CorrelatedAwaitManager(Func<TMessage, TKey> getKey, ITraceWriter traceWriter = null)
         {
             _getKeyFunc = getKey;
@@ -79,6 +60,9 @@ namespace RegenerativeDistributedCache
             _cacheKeyPrefixNamedLocks = $"{nameof(CorrelatedAwaitManager<TMessage, TKey>)}:ManageAwaitersNamedLock:{Guid.NewGuid():N}:";
         }
 
+        /// <summary>
+        /// Returns an awaitable task interface to await a requested result / message (based on a message id / key).
+        /// </summary>
         public ICorrelatedAwaiter<TMessage> CreateAwaiter(TKey key)
         {
             var awaitableNotification = new CorrelatedAwaiter(key, this);
@@ -99,6 +83,11 @@ namespace RegenerativeDistributedCache
             return awaitableNotification;
         }
 
+        /// <summary>
+        /// Notify all awaiters that have been created against this CorrelatedAwaitManager for the particular key
+        /// and remove them from receiving future notifications.
+        /// </summary>
+        /// <param name="msg">Message to extract TKey from and to provide to awaiters.</param>
         public void NotifyAwaiters(TMessage msg)
         {
             // do critical lock synchonisation and manage dictionary of lists of awaiters inline before later
@@ -113,7 +102,7 @@ namespace RegenerativeDistributedCache
                 if (_awaitedNotifications.TryGetValue(_getKeyFunc(msg), out var hashSet))
                 {
                     tasksToComplete = hashSet.ToList();
-                    _awaitedNotifications.Remove(_getKeyFunc(msg));
+                    _awaitedNotifications.TryRemove(_getKeyFunc(msg), out var trash);
                     tasksToComplete.ForEach(tc => tc.Removed = true);
                 }
             }
@@ -139,7 +128,7 @@ namespace RegenerativeDistributedCache
                             hashSet.Remove(awaitableNotification);
                             if (hashSet.Count == 0)
                             {
-                                _awaitedNotifications.Remove(awaitableNotification.Key);
+                                _awaitedNotifications.TryRemove(awaitableNotification.Key, out var trash);
                             }
                         }
 
@@ -151,10 +140,10 @@ namespace RegenerativeDistributedCache
 
         private sealed class CorrelatedAwaiter : IDisposable, ICorrelatedAwaiter<TMessage>
         {
-            private TaskCompletionSource<TMessage> TaskCompletionSource { get; set; }
-            private CorrelatedAwaitManager<TMessage, TKey> CorrelatedAwaiterManager { get; set; }
+            private TaskCompletionSource<TMessage> TaskCompletionSource { get; }
+            private CorrelatedAwaitManager<TMessage, TKey> CorrelatedAwaiterManager { get; }
             internal bool Removed { get; set; }
-            internal TKey Key { get; private set; }
+            internal TKey Key { get; }
             public Task<TMessage> Task => TaskCompletionSource.Task;
 
             public CorrelatedAwaiter(TKey key, CorrelatedAwaitManager<TMessage, TKey> correlatedAwaiterManager)

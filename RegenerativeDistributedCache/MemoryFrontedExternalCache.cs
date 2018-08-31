@@ -1,40 +1,14 @@
-﻿#region *   License     *
-/*
-    RegenerativeDistributedCache - MemoryFrontedExternalCache
-
-    Copyright (c) 2018 Mhano Harkness
-
-    Permission is hereby granted, free of charge, to any person obtaining a copy
-    of this software and associated documentation files (the "Software"), to deal
-    in the Software without restriction, including without limitation the rights
-    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-    copies of the Software, and to permit persons to whom the Software is
-    furnished to do so, subject to the following conditions:
-
-    The above copyright notice and this permission notice shall be included in all
-    copies or substantial portions of the Software.
-
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-    SOFTWARE.
-
-    License: https://opensource.org/licenses/mit
-    Website: https://github.com/mhano/RegenerativeDistributedCache
- */
-#endregion
-
-using System;
-using System.Diagnostics;
+﻿using System;
 using System.Runtime.Caching;
 using RegenerativeDistributedCache.Interfaces;
 using RegenerativeDistributedCache.SimpleHelpers;
 
 namespace RegenerativeDistributedCache
 {
+    /// <summary>
+    /// Wraps a memory cache in front of an external cache (such as redis) to optimise multiple retrievals per machine.
+    /// Key space should be unique within app domain and external-cache database but consistent across nodes in a farm.
+    /// </summary>
     public class MemoryFrontedExternalCache : IDisposable
     {
         private readonly ITraceWriter _traceWriter;
@@ -47,10 +21,12 @@ namespace RegenerativeDistributedCache
         /// <summary>
         /// Wraps a memory cache in front of an external cache (such as redis) to optimise multiple retrievals per machine.
         /// Key space should be unique within app domain and external-cache database but consistent across nodes in a farm.
+        /// Creates a .net MemoryCache instance named "MemoryFrontedExternalCache_{keyspace}" (usually no configuration of
+        /// this is required).
         /// </summary>
         /// <param name="keyspace">Key space must be unique within app domain and external-cache database but consistent across nodes in a farm.</param>
-        /// <param name="externalCache"></param>
-        /// <param name="traceWriter"></param>
+        /// <param name="externalCache">The external distributed/network cache to get/store values from/in.</param>
+        /// <param name="traceWriter">Optional trace writer for detailed diagnostics.</param>
         public MemoryFrontedExternalCache(string keyspace, IExternalCache externalCache, ITraceWriter traceWriter = null)
         {
             _memoryCache = new MemoryCache($"{nameof(MemoryFrontedExternalCache)}_{keyspace}");
@@ -66,6 +42,12 @@ namespace RegenerativeDistributedCache
             _lockKeyPrefixExternalRetrieve = $"{nameof(MemoryFrontedExternalCache)}:{keyspace}:Retrieve:{Guid.NewGuid():N}:";
         }
 
+        /// <summary>
+        /// Store a value in local memory cache and external network cache.
+        /// </summary>
+        /// <param name="key">Cache key (unique within external cache)</param>
+        /// <param name="val">Value serialised as a string</param>
+        /// <param name="absoluteExpiration">Absolute expiration relative to now.</param>
         public void Set(string key, string val, TimeSpan absoluteExpiration)
         {
             StoreLocalMemory(key, val, absoluteExpiration);
@@ -81,6 +63,12 @@ namespace RegenerativeDistributedCache
             _memoryCache.Set(key, val, DateTimeOffset.UtcNow.Add(absoluteExpiration));
         }
 
+        /// <summary>
+        /// Returns a value from local memory, failing that retrieves from external/network cache,
+        /// stores a copy in local memory (as long as it is not near immediatey expiring) and returns it.
+        /// </summary>
+        /// <param name="key">Cache key (unique within external cache)</param>
+        /// <returns></returns>
         public string Get(string key)
         {
             var cacheVal = _memoryCache.Get(key);
@@ -119,6 +107,12 @@ namespace RegenerativeDistributedCache
             return null;
         }
 
+        /// <summary>
+        /// Return the first n characters of the value of an item in cache or null.
+        /// </summary>
+        /// <param name="key">Cache key (unique within external cache)</param>
+        /// <param name="length">Number of characters to read from the start of the stored value.</param>
+        /// <returns>Return the first n characters of the value of an item in cache or null.</returns>
         public string GetStringStart(string key, int length)
         {
             var cacheVal = (string)_memoryCache.Get(key);
@@ -135,6 +129,11 @@ namespace RegenerativeDistributedCache
             return cacheVal;
         }
 
+        /// <summary>
+        /// Remove from local memory cache only (allows for the lazy fetch of an updated value
+        /// from the external/network cache).
+        /// </summary>
+        /// <param name="key">Cache key (unique within external cache)</param>
         public void RemoveLocal(string key)
         {
             var removed = _memoryCache.Remove(key);
@@ -142,6 +141,9 @@ namespace RegenerativeDistributedCache
             _traceWriter?.Write($"{nameof(MemoryFrontedExternalCache)}: {nameof(RemoveLocal)}: {key}, Removed: {removed != null}");
         }
 
+        /// <summary>
+        /// Dispose implemented as internal MemoryCache should be disposed.
+        /// </summary>
         public void Dispose()
         {
             _memoryCache?.Dispose();
