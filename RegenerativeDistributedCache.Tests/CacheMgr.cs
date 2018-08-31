@@ -403,13 +403,12 @@ namespace RegenDistCache.Tests
                     dtw.StopAndClear();
                 }
             }
-            catch
+            finally
             {
                 foreach (var l in dtw.GetOutput())
                 {
                     _output.WriteLine(l);
                 }
-                throw;
             }
         }
 
@@ -511,13 +510,12 @@ namespace RegenDistCache.Tests
 
                 dtw.StopAndClear();
             }
-            catch
+            finally
             {
                 foreach (var l in dtw.GetOutput())
                 {
                     _output.WriteLine(l);
                 }
-                throw;
             }
         }
 
