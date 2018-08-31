@@ -12,7 +12,7 @@ Requires an external (network) cache, a fan out pub/sub message bus, and a distr
 * Website: [GitHub -> mhano/RegenerativeDistributedCache](https://github.com/mhano/RegenerativeDistributedCache)
 * Builds:
   * [Appveyor -> mhano/regenerativedistributedcache](https://ci.appveyor.com/project/mhano/regenerativedistributedcache)
-   [![Build status](https://ci.appveyor.com/api/projects/status/l8sopd19phi026k6/branch/master?svg=true)](https://ci.appveyor.com/project/mhano/regenerativedistributedcache/branch/master)
+    [![Build status](https://ci.appveyor.com/api/projects/status/l8sopd19phi026k6/branch/master?svg=true)](https://ci.appveyor.com/project/mhano/regenerativedistributedcache/branch/master)
 * License: ["MIT" License Here](https://raw.githubusercontent.com/mhano/RegenerativeDistributedCache/master/LICENSE), reference: [[OpenSource.org -> MIT](https://opensource.org/licenses/mit)]
 
 ## RegenerativeDistributedCache.Redis
