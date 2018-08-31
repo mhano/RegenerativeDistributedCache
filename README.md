@@ -13,7 +13,7 @@ Packages
 * [NuGet.org -> RegenerativeDistributedCache.Redis](https://www.nuget.org/packages/RegenerativeDistributedCache.Redis/)
 
 Builds
-* [Appveyor -> mhano/regenerativedistributedcache](https://ci.appveyor.com/project/mhano/regenerativedistributedcache)
+* [Appveyor -> mhano/regenerativedistributedcache](https://ci.appveyor.com/project/mhano/regenerativedistributedcache/history)
      
   ![Build status](https://ci.appveyor.com/api/projects/status/l8sopd19phi026k6/branch/master?svg=true)
 
