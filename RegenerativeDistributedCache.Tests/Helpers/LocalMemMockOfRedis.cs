@@ -14,26 +14,24 @@ namespace RegenDistCache.Tests.Helpers
     /// </summary>
     public class LocalMemMockOfRedis : IExternalCache, IDistributedLockFactory, IFanOutBus, IDisposable
     {
-        private static MemoryCache _memoryCache = new MemoryCache($"{nameof(LocalMemMockOfRedis)}");
-        private static ConcurrentDictionary<string, ConcurrentBag<Action<string>>> Subscriptions = new ConcurrentDictionary<string, ConcurrentBag<Action<string>>>();
+        private static ConcurrentDictionary<string, LocalMemMockOfRedis> MockedInstances = new ConcurrentDictionary<string, LocalMemMockOfRedis>();
+
+        private readonly MemoryCache _memoryCache = new MemoryCache($"{nameof(LocalMemMockOfRedis)}");
+        private readonly ConcurrentDictionary<string, ConcurrentBag<Action<string>>> _subscriptions = new ConcurrentDictionary<string, ConcurrentBag<Action<string>>>();
+
+        private LocalMemMockOfRedis() { } // hide ctor
+
+        public static LocalMemMockOfRedis Create(string redisInstanceId)
+        {
+            lock (typeof(LocalMemMockOfRedis))
+            {
+                return MockedInstances.GetOrAdd(redisInstanceId, (k) => new LocalMemMockOfRedis());
+            }
+        }
 
         public IExternalCache Cache => this;
         public IDistributedLockFactory Lock => this;
         public IFanOutBus Bus => this;
-
-        public static void Reset()
-        {
-            _memoryCache.Dispose();
-
-            var oldSub = Subscriptions;
-            oldSub.Values.ToList().ForEach(v =>
-            {
-                while (v.TryTake(out Action<string> tr));
-            });
-
-            _memoryCache = new MemoryCache($"{nameof(LocalMemMockOfRedis)}");
-            Subscriptions = new ConcurrentDictionary<string, ConcurrentBag<Action<string>>>();
-        }
 
         public void StringSet(string key, string val, TimeSpan absoluteExpiration)
         {
@@ -66,18 +64,18 @@ namespace RegenDistCache.Tests.Helpers
 
         public void Subscribe(string topicKey, Action<string> messageReceive)
         {
-            Subscriptions.GetOrAdd(topicKey, (k) => new ConcurrentBag<Action<string>>())
+            _subscriptions.GetOrAdd(topicKey, (k) => new ConcurrentBag<Action<string>>())
                 .Add(messageReceive);
         }
 
         public void Publish(string topicKey, string value)
         {
-            Subscriptions[topicKey].ToList().ForEach(a => Task.Run(() => a(value)));
+            _subscriptions[topicKey].ToList().ForEach(a => Task.Run(() => a(value)));
         }
 
         public void Dispose()
         {
-            Reset();
+            // Reset();
         }
     }
 }

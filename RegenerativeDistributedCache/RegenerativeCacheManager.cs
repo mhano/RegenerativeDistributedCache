@@ -360,7 +360,10 @@ namespace RegenerativeDistributedCache
 
         }
 
-        void IDisposable.Dispose()
+        /// <summary>
+        /// Disposes internal MemoryCache instances
+        /// </summary>
+        public void Dispose()
         {
             _underlyingCache?.Dispose();
             _regenTriggers?.Dispose();

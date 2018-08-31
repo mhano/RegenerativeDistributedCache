@@ -25,6 +25,8 @@ namespace RegenDistCache.Tests.Helpers
 
             public void Write(string message)
             {
+                if (_dtw._stopped) return;
+
                 _dtw.CollectedOutput.Add(new Tuple<int, DateTime, string>(
                     Interlocked.Increment(ref _dtw._sequenceSource), DateTime.Now,
                     $"{_name}: {message}"
@@ -40,6 +42,13 @@ namespace RegenDistCache.Tests.Helpers
 
         public readonly ConcurrentBag<Tuple<int, DateTime, string>> CollectedOutput = new ConcurrentBag<Tuple<int, DateTime, string>>();
         private int _sequenceSource;
+        private bool _stopped;
+
+        public void StopAndClear()
+        {
+            _stopped = true;
+            while (CollectedOutput.TryTake(out var tr)) ;
+        }
 
         public IEnumerable<string> GetOutput()
         {

@@ -22,12 +22,23 @@ namespace RegenerativeDistributedCache.Redis
             _redisSubscriber = redisSubscriber;
         }
 
-        void IFanOutBus.Subscribe(string topicKey, Action<string> messageReceive)
+        /// <summary>
+        /// From RegenerativeDistributedCache -> IFanOutBus - Create a non durable subscription to a topic based on a key. The method must only return once the subscription is created.
+        /// </summary>
+        /// <param name="topicKey">A unique key representing a topic (shared amongst a concern / group of subscribers across multiple nodes)</param>
+        /// <param name="messageReceive">The action to call (synchronously or asynchronously upon receiving a relevant message [based on topic key]).</param>
+        public void Subscribe(string topicKey, Action<string> messageReceive)
         {
             _redisSubscriber.Subscribe(topicKey, (ch, value) => messageReceive(value));
         }
 
-        void IFanOutBus.Publish(string topicKey, string value)
+        /// <summary>
+        /// From RegenerativeDistributedCache -> IFanOutBus - Publish a message to all listeners that have subscribed to the topic key.
+        /// This method may be implemented synchronously or asynchronously under the covers.
+        /// </summary>
+        /// <param name="topicKey">A unique key representing a topic (shared amongst a concern / group of subscribers across multiple nodes)</param>
+        /// <param name="value">A string message to send to all subscribers</param>
+        public void Publish(string topicKey, string value)
         {
             _redisSubscriber.Publish(topicKey, value);
         }

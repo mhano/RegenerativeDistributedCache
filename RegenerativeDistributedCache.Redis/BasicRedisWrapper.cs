@@ -10,16 +10,16 @@ using IDistributedLockFactory = RegenerativeDistributedCache.Interfaces.IDistrib
 namespace RegenerativeDistributedCache.Redis
 {
     /// <summary>
-    /// WARNING - BASIC / BETA / DEMO Only. Basic wrapper of redis for caching, locking and messaging.
-    /// TODO: Should this connect to multiple redis nodes beyond using ConnectionMultiplexer.Connect("")?
-    /// TODO: Does this need to be anything more than the below (many examples use lists of multiplexers)?
-    /// TODO: is there an advantage in using seperate connections for seperate concerns (caching v messaging)
+    /// WARNING - BASIC REDIS CONNECTION ONLY. Basic wrapper of redis for caching, locking and messaging.
     /// </summary>
     public class BasicRedisWrapper : IDisposable
     {
         private RedisDistributedLockFactory _redisDistributedLockFactory;
         private RedisExternalCache _redisExternalCache;
         private RedisFanOutBus _redisFanOutBus;
+
+        // we dispose any disposables that we create (RedLockFac and Redis Connections)
+        private readonly List<IDisposable> _createdDisposables = new List<IDisposable>();
 
         /// <summary>
         /// Cache interface for RegenerativeCacheManager
@@ -37,7 +37,9 @@ namespace RegenerativeDistributedCache.Redis
         public IFanOutBus Bus => _redisFanOutBus;
 
         /// <summary>
-        /// Uses a single redis connection for caching, locking and messaging.
+        /// WARNING - BASIC REDIS CONNECTION ONLY. Basic wrapper of redis for caching, locking and messaging.
+        /// Uses a single redis connection for caching, locking and messaging (unless told to create three).
+        /// 
         /// </summary>
         /// <param name="redisConfiguration">Redis connection string. e.g. "localhost:6379"</param>
         /// <param name="useMultipleRedisConnections">Uses a single redis connection for caching, locking and messaging or use seperate connections for each.</param>
@@ -45,15 +47,22 @@ namespace RegenerativeDistributedCache.Redis
         {
             if (useMultipleRedisConnections)
             {
-                Initialise( ConnectionMultiplexer.Connect(redisConfiguration),
-                            ConnectionMultiplexer.Connect(redisConfiguration),
-                            ConnectionMultiplexer.Connect(redisConfiguration));
+                Initialise( RedisConnect(redisConfiguration),
+                            RedisConnect(redisConfiguration),
+                            RedisConnect(redisConfiguration));
             }
             else
             {
-                var redisConnection = ConnectionMultiplexer.Connect(redisConfiguration);
+                var redisConnection = RedisConnect(redisConfiguration);
                 Initialise(redisConnection, redisConnection, redisConnection);
             }
+        }
+
+        private ConnectionMultiplexer RedisConnect(string redisConfiguration)
+        {
+            var conn = ConnectionMultiplexer.Connect(redisConfiguration);
+            _createdDisposables.Add(conn);
+            return conn;
         }
 
         /// <summary>
@@ -78,19 +87,23 @@ namespace RegenerativeDistributedCache.Redis
 
         private void Initialise(IConnectionMultiplexer cacheConnection, IConnectionMultiplexer lockConnection, IConnectionMultiplexer messagingConnection)
         {
-            var redisMultiplexersCache = new List<IConnectionMultiplexer> { cacheConnection, };
+            var redLockMultiPlexers = new List<RedLockMultiplexer>{new RedLockMultiplexer(lockConnection)};
+            var redLock = RedLockFactory.Create(redLockMultiPlexers);
+            _createdDisposables.Add(redLock);
+            _redisDistributedLockFactory = new RedisDistributedLockFactory(redLock);
 
-            _redisDistributedLockFactory = new RedisDistributedLockFactory(
-                RedLockFactory.Create(new List<RedLockMultiplexer>(redisMultiplexersCache.Select(rm => new RedLockMultiplexer(rm)))));
-
-            _redisExternalCache = new RedisExternalCache(lockConnection.GetDatabase());
+            _redisExternalCache = new RedisExternalCache(cacheConnection.GetDatabase());
 
             _redisFanOutBus = new RedisFanOutBus(messagingConnection.GetSubscriber());
         }
 
-        void IDisposable.Dispose()
+        /// <summary>
+        /// Disposes any internally created (RedLockFactory and Redis connections)
+        /// </summary>
+        public void Dispose()
         {
-            (_redisDistributedLockFactory as IDisposable)?.Dispose();
+            // ReSharper disable once EmptyGeneralCatchClause
+            _createdDisposables.ForEach(d =>{ try { d?.Dispose(); } catch{} });
         }
     }
 }
