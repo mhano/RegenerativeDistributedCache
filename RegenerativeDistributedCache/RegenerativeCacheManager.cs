@@ -360,7 +360,7 @@ namespace RegenerativeDistributedCache
 
         }
 
-        public void Dispose()
+        void IDisposable.Dispose()
         {
             _underlyingCache?.Dispose();
             _regenTriggers?.Dispose();
