@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 // associated with an assembly.
 [assembly: AssemblyTitle("RegenerativeDistributedCache.Demo")]
 [assembly: AssemblyProduct("RegenerativeDistributedCache.Demo")]
-[assembly: AssemblyDescription(@"RegenerativeDistributedCache.Tests
+[assembly: AssemblyDescription(@"RegenerativeDistributedCache.Demo
 
 Demo of RegenerativeDistributedCache in console application.
 
