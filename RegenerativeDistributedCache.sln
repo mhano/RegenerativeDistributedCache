@@ -16,6 +16,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionItems", "SolutionIt
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RegenerativeDistributedCache.Redis", "RegenerativeDistributedCache.Redis\RegenerativeDistributedCache.Redis.csproj", "{75ED6B80-D619-4C69-B860-20502C0E3265}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RegenerativeDistributedCache.Demo", "RegenerativeDistributedCache.Demo\RegenerativeDistributedCache.Demo.csproj", "{29EA123F-9070-43B9-BCBA-075F9673E078}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -34,6 +36,10 @@ Global
 		{75ED6B80-D619-4C69-B860-20502C0E3265}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{75ED6B80-D619-4C69-B860-20502C0E3265}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{75ED6B80-D619-4C69-B860-20502C0E3265}.Release|Any CPU.Build.0 = Release|Any CPU
+		{29EA123F-9070-43B9-BCBA-075F9673E078}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{29EA123F-9070-43B9-BCBA-075F9673E078}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{29EA123F-9070-43B9-BCBA-075F9673E078}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{29EA123F-9070-43B9-BCBA-075F9673E078}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
