@@ -491,11 +491,10 @@ namespace RegenDistCache.Tests
                                          $"{(int)(end.Subtract(start).TotalSeconds / regenerationInterval.TotalSeconds)} chances to compete, " +
                                          $"chances of not seeing results from both nodes is approximately " +
                                          $"2 in (2^{(int)(end.Subtract(start).TotalSeconds / regenerationInterval.TotalSeconds)}), " +
-                                         $"i.e. 1 in {Math.Pow(2, (int)(end.Subtract(start).TotalSeconds / regenerationInterval.TotalSeconds)) / 2}.";
+                                         $"i.e. 1 in {Math.Pow(2, (int)(end.Subtract(start).TotalSeconds / regenerationInterval.TotalSeconds)) / 2:#,##0}.";
 
 
-                    _output.WriteLine($"90% of results should be identical, {(countOfEqual / results.Count) * 100:0}% were ({countOfEqual} / {results.Count}).");
-                    _output.WriteLine(probabilityMsg);
+                    _output.WriteLine($"90% of results should be identical, {(countOfEqual / results.Count) * 100:0}% were ({countOfEqual} / {results.Count}). {probabilityMsg}");
 
                     Assert.True(results.Count > 19,
                         $"Shouldn't see any cache regeneration / node competition for 2 to 3 seconds. Saw different results in only {DateTime.Now.Subtract(start).TotalMilliseconds*1000:#,##0.0}us.");
