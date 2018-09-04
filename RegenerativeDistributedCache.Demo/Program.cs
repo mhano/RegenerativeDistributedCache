@@ -22,9 +22,9 @@ namespace RegenerativeDistributedCache.Demo
         {
             var rndSrc = new Random(2);
 
-            int testIdSrc = 0;
+            var testIdSrc = 0;
 
-            int uniqueCacheId = 1;
+            var uniqueCacheId = 1;
             var ttl = TimeSpan.FromSeconds(10); // 20 min equiv
             var regen = TimeSpan.FromSeconds(2.5); // 1 min equiv
 
@@ -35,16 +35,20 @@ namespace RegenerativeDistributedCache.Demo
             var p1Duration = TimeSpan.FromSeconds(10);
             var p1Frequency = TimeSpan.FromSeconds(0.5);
 
-            bool doRegTest = true;
-            bool doPerfTest = true;
-            bool writeOutputFiles = false;
+            var launchTwoInstances = false;
+            var doRegTest = true;
+            var doPerfTest = true;
 
-            var perfTestCount = 1000000;
+            var writeTraceOutputFile = false;
+            var writeHtmlOutputFile = false;
+            var outputFolder = "c:\\temp\\";
+
+            var perfTestCount = 10000000;
             var perfTestMeasure = 100000;
 
             var keyspace = $"keyspace{Guid.NewGuid():N}";
 
-            if (args.Length == 0 && !Debugger.IsAttached)
+            if (launchTwoInstances && args.Length == 0 && !Debugger.IsAttached)
             {
                 Process.Start(Assembly.GetEntryAssembly().Location, $"nospawn 1 {keyspace}");
                 //Task.Delay(2000).Wait();
@@ -59,9 +63,10 @@ namespace RegenerativeDistributedCache.Demo
                 keyspace = args[2];
             }
 
-            var synchedConsole = new SynchedColouredConsoleTraceWriter(writeOutputFiles ?
-                $"C:\\temp\\SynchedConsole_{keyspace}_{id}.txt" :
-                (string)null);
+            var synchedConsole = new SynchedColouredConsoleTraceWriter(
+                traceFileName: writeTraceOutputFile ? $"{outputFolder}RegenerativeCacheManagerDemo_{keyspace}_{id}.txt" : null,
+                htmlFileName: writeHtmlOutputFile ? $"{outputFolder}RegenerativeCacheManagerDemo_{keyspace}_{id}.html" : null
+            );
 
             using (var ct1R = new BasicRedisWrapper("localhost"))
             using (var cacheTest1 = new RegenerativeCacheManager("keyspace3", ct1R.Cache, ct1R.Lock, ct1R.Bus))
@@ -70,6 +75,7 @@ namespace RegenerativeDistributedCache.Demo
             {
                 new List<IDisposable> { cacheTest1, ct1R, cacheTest2, ct2R }.ForEach(d => d.Dispose());
             }
+
             synchedConsole.WriteLine("RegenerativeCacheManager dispose works.", ConsoleColor.Black, ConsoleColor.Green);
 
             var redis = new BasicRedisWrapper("localhost", true);
@@ -188,11 +194,13 @@ namespace RegenerativeDistributedCache.Demo
                 GC.Collect();
             }
 
-            synchedConsole.WriteLine("Press enter to exit.", overrideShowOutput: true);
-
             synchedConsole.CloseAndStopAllWriting();
 
-            Console.ReadLine();
+            if (launchTwoInstances)
+            {
+                synchedConsole.WriteLine("Press enter to exit.", overrideShowOutput: true);
+                Console.ReadLine();
+            }
         }
 
         private static void ShowStats(SynchedColouredConsoleTraceWriter synchedConsole)
