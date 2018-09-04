@@ -14,13 +14,16 @@ namespace RegenerativeDistributedCache.Demo
         private readonly object _lockSync = new object();
 
         private int _msgSeq = 0;
-        private readonly string _fileName;
-        private StreamWriter _outputFile;
+        private readonly string _traceFileName;
+        private readonly string _htmlFileName;
+        private StreamWriter _htmlOutputFile;
+        private StreamWriter _traceOutputFile;
         private int _fileSeq = 0;
 
-        public SynchedColouredConsoleTraceWriter(string fileName)
+        public SynchedColouredConsoleTraceWriter(string traceFileName = null, string htmlFileName = null)
         {
-            _fileName = fileName;
+            _traceFileName = traceFileName;
+            _htmlFileName = htmlFileName;
 
             OpenNewOutputFile();
         }
@@ -35,30 +38,29 @@ namespace RegenerativeDistributedCache.Demo
             lock (_lockSync)
             {
                 StopAllWriting = false;
-                _outputFile?.Close();
-                _outputFile = null;
 
-                if (!string.IsNullOrWhiteSpace(_fileName))
-                {
-                    _outputFile = new StreamWriter(File.Open(
-                        $"{Path.GetDirectoryName(_fileName)}\\{Path.GetFileNameWithoutExtension(_fileName)}_{_fileSeq++}{Path.GetExtension(_fileName)}"
-                        , FileMode.Create, FileAccess.ReadWrite, FileShare.Read));
-                }
+                CloseFiles();
+
+                OpenFiles();
             }
         }
 
-        public void Resume()
+        private void OpenFiles()
         {
-            lock (_lockSync)
+            if (!string.IsNullOrWhiteSpace(_traceFileName))
             {
-                StopAllWriting = false;
+                _traceOutputFile = new StreamWriter(File.Open(
+                    $"{Path.GetDirectoryName(_traceFileName)}\\{Path.GetFileNameWithoutExtension(_traceFileName)}_{_fileSeq++}{Path.GetExtension(_traceFileName)}"
+                    , FileMode.Create, FileAccess.ReadWrite, FileShare.Read));
+            }
 
-                if (_outputFile == null && !string.IsNullOrWhiteSpace(_fileName))
-                {
-                    _outputFile = new StreamWriter(File.Open(
-                        $"{Path.GetDirectoryName(_fileName)}\\{Path.GetFileNameWithoutExtension(_fileName)}_{_fileSeq++}{Path.GetExtension(_fileName)}"
-                        , FileMode.Create, FileAccess.ReadWrite, FileShare.Read));
-                }
+            if (!string.IsNullOrWhiteSpace(_htmlFileName))
+            {
+                _htmlOutputFile = new StreamWriter(File.Open(
+                    $"{Path.GetDirectoryName(_htmlFileName)}\\{Path.GetFileNameWithoutExtension(_htmlFileName)}_{_fileSeq++}{Path.GetExtension(_htmlFileName)}"
+                    , FileMode.Create, FileAccess.ReadWrite, FileShare.Read));
+                _htmlOutputFile.WriteLine("<html><body style=\"background-color: black; font-size: 10; font-family: consolas,courier-new,fixed-width;\">");
+                _htmlOutputFile.WriteLine($"<h1 style=\"color: white;\">{DateTime.Now}</h1>");
             }
         }
 
@@ -67,9 +69,17 @@ namespace RegenerativeDistributedCache.Demo
             lock (_lockSync)
             {
                 StopAllWriting = true;
-                _outputFile?.Close();
-                _outputFile = null;
+                CloseFiles();
             }
+        }
+
+        private void CloseFiles()
+        {
+            _traceOutputFile?.Close();
+            _traceOutputFile = null;
+            _htmlOutputFile?.WriteAsync("</body></html>");
+            _htmlOutputFile?.Close();
+            _htmlOutputFile = null;
         }
 
         public void WriteLine(string msg, ConsoleColor? fgColor = null, ConsoleColor? bgColor = null, bool overrideShowOutput = false)
@@ -124,18 +134,22 @@ namespace RegenerativeDistributedCache.Demo
 
         private void WriteInternal(Tuple<DateTime, string, ConsoleColor?, ConsoleColor?, int> tpl, bool writeToConsole)
         {
-            if (StopAllWriting || (_outputFile == null && !writeToConsole)) return;
+            if (StopAllWriting || (_traceOutputFile == null && !writeToConsole)) return;
 
             var txt = GetText(tpl);
 
             if (writeToConsole)
             {
-                Console.ForegroundColor = tpl.Item3 ?? ConsoleColor.Gray;
-                Console.BackgroundColor = tpl.Item4 ?? ConsoleColor.Black;
+                var fg = tpl.Item3 ?? ConsoleColor.Gray;
+                var bg = tpl.Item4 ?? ConsoleColor.Black;
+                Console.ForegroundColor = fg;
+                Console.BackgroundColor = bg;
                 Console.WriteLine(txt);
+
+                _htmlOutputFile?.WriteLine($"<span style=\"color: {fg.ToString().ToLowerInvariant()}; background-color: {bg.ToString().ToLowerInvariant()}\">{txt.Replace("\r", "").Replace("\n", "<br/>\r\n")}</span><br/>");
             }
 
-            _outputFile?.WriteLine(txt);
+            _traceOutputFile?.WriteLine(txt);
         }
 
         private string GetText(Tuple<DateTime, string, ConsoleColor?, ConsoleColor?, int> l)
