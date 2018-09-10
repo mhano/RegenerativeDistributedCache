@@ -88,6 +88,8 @@ Basically a very short lived hyper efficient subscribe mechanism to support coor
 ### Setup:
 
 ```C#
+_singletonCorrelatedAwaitManager = new CorrelatedAwaitManager<TMessage, TKey>(m => m.Key);
+
 _remoteBus.Subscribe<TMessage>(m => _singletonCorrelatedAwaitManager.NotifyAwaiters(m));
 ```
 
