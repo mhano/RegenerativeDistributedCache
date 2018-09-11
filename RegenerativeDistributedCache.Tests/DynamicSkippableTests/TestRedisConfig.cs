@@ -3,7 +3,7 @@ using RegenerativeDistributedCache.Redis;
 
 namespace RegenDistCache.Tests.DynamicSkippableTests
 {
-    public class TestMachineHasRedis
+    public class TestRedisConfig
     {
         public const string RedisConfigurationEnvironmentVariable = "REDIS_CONFIGURATION_FOR_UNIT_TESTS";
 
@@ -43,7 +43,7 @@ namespace RegenDistCache.Tests.DynamicSkippableTests
         {
             return $"Error connecting to redis at test app domain startup: " +
                    $"Redis configuration: {_redisConfiguration}, " +
-                   $"When: {_localRedisTestTime}, " +
+                   $"When: {_localRedisTestTime:O}, " +
                    $"Error: {_localRedisTestFailDetails}";
         }
 
@@ -86,10 +86,8 @@ namespace RegenDistCache.Tests.DynamicSkippableTests
                     _localRedisTestTime = DateTime.Now;
                     using (var basicRedis = new BasicRedisWrapper(_redisConfiguration, false))
                     {
-                        // TODO: Consider - should we verify that the local redis is capable of basic tasks we need (locking/pubsub/etc.)?
-
                         basicRedis.Cache.StringSet(
-                            $"{typeof(TestMachineHasRedis).FullName}:{nameof(GetTestEnvironmentRedis)}:{Guid.NewGuid():N}",
+                            $"{typeof(TestRedisConfig).FullName}:{nameof(GetTestEnvironmentRedis)}:{Guid.NewGuid():N}",
                             "value", TimeSpan.FromSeconds(3));
 
                         _localRedisAvailable = true;

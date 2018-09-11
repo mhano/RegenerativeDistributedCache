@@ -11,8 +11,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Mhano Harkness")]
 [assembly: AssemblyProduct("RegenerativeDistributedCache")]
-[assembly: AssemblyCopyright("Copyright © Mhano Harkness 2018")]
-[assembly: AssemblyTrademark(@"Copyright (c) 2018 Mhano Harkness
+[assembly: AssemblyCopyright(@"Copyright (c) 2018 Mhano Harkness
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the ""Software""), to deal
@@ -32,8 +31,11 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-License: https://opensource.org/licenses/mit
+License: https://raw.githubusercontent.com/mhano/RegenerativeDistributedCache/master/LICENSE (ref: https://opensource.org/licenses/mit)
 Website: https://github.com/mhano/RegenerativeDistributedCache")]
+
+[assembly: AssemblyTrademark("Copyright © Mhano Harkness 2018")]
+
 [assembly: AssemblyCulture("")]
 
 // Setting ComVisible to false makes the types in this assembly not visible

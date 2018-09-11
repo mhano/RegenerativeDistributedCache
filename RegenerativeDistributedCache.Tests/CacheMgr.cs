@@ -54,10 +54,10 @@ namespace RegenDistCache.Tests
             public SingleNodeGetsOneConn(ITestOutputHelper output) { _output = output; }
             #endregion
 
-            [SkippableFact]
+            [SkippableIfNoRedisFact]
             public void T()
             {
-                var redisConnection = TestMachineHasRedis.GetTestEnvironmentRedis();
+                var redisConnection = TestRedisConfig.GetTestEnvironmentRedis();
                 SingleNodeGetsInternal(redisConnection, false, _output);
             }
         }
@@ -69,10 +69,10 @@ namespace RegenDistCache.Tests
             public SingleNodeGetsMultiConn(ITestOutputHelper output) { _output = output; }
             #endregion
 
-            [SkippableFact]
+            [SkippableIfNoRedisFact]
             public void T()
             {
-                var redisConnection = TestMachineHasRedis.GetTestEnvironmentRedis();
+                var redisConnection = TestRedisConfig.GetTestEnvironmentRedis();
                 SingleNodeGetsInternal(redisConnection, true, _output);
             }
         }
@@ -98,10 +98,10 @@ namespace RegenDistCache.Tests
             public MultiNodeGetsOneConn(ITestOutputHelper output) { _output = output; }
             #endregion
 
-            [Fact]
+            [SkippableIfNoRedisFact]
             public void T()
             {
-                var redisConnection = TestMachineHasRedis.GetTestEnvironmentRedis();
+                var redisConnection = TestRedisConfig.GetTestEnvironmentRedis();
 
                 MultiNodeGetsInternal(redisConnection, false, _output);
             }
@@ -114,10 +114,10 @@ namespace RegenDistCache.Tests
             public MultiNodeGetsMultiConn(ITestOutputHelper output) { _output = output; }
             #endregion
 
-            [Fact]
+            [SkippableIfNoRedisFact]
             public void T()
             {
-                var redisConnection = TestMachineHasRedis.GetTestEnvironmentRedis();
+                var redisConnection = TestRedisConfig.GetTestEnvironmentRedis();
 
                 MultiNodeGetsInternal(redisConnection, true, _output);
             }
@@ -144,10 +144,10 @@ namespace RegenDistCache.Tests
             public NodesCompeteOneConn(ITestOutputHelper output) { _output = output; }
             #endregion
 
-            [Fact]
+            [SkippableIfNoRedisFact]
             public void T()
             {
-                var redisConnection = TestMachineHasRedis.GetTestEnvironmentRedis();
+                var redisConnection = TestRedisConfig.GetTestEnvironmentRedis();
 
                 NodesCompeteInternal(redisConnection, false, _output);
             }
@@ -160,10 +160,10 @@ namespace RegenDistCache.Tests
             public NodesCompeteMultiConn(ITestOutputHelper output) { _output = output; }
             #endregion
 
-            [Fact]
+            [SkippableIfNoRedisFact]
             public void T()
             {
-                var redisConnection = TestMachineHasRedis.GetTestEnvironmentRedis();
+                var redisConnection = TestRedisConfig.GetTestEnvironmentRedis();
 
                 NodesCompeteInternal(redisConnection, true, _output);
             }
