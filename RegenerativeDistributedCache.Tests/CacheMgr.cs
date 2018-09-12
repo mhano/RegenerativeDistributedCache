@@ -249,6 +249,7 @@ namespace RegenDistCache.Tests
                     Assert.Equal(result5, result6);
 
                     tw.Stop();
+                    tw.Clear();
                 }
             }
             finally
@@ -269,11 +270,11 @@ namespace RegenDistCache.Tests
                 redisConnection = $"mock-{Guid.NewGuid():N}";
             }
 
-            var dtw = new DualTraceWriter();
+            var tw = new DualTraceWriter();
             try
             {
                 using (var node1Ext = new RedisInterceptOrMock(redisConnection, useMultipleRedisConnections))
-                using (var node1Cache = new RegenerativeCacheManager(testRunKeyspace, node1Ext.Cache, node1Ext.Lock, node1Ext.Bus, dtw.T1)
+                using (var node1Cache = new RegenerativeCacheManager(testRunKeyspace, node1Ext.Cache, node1Ext.Lock, node1Ext.Bus, tw.T1)
                 {
                     CacheExpiryToleranceSeconds = 1.5,
                     MinimumForwardSchedulingSeconds = 1,
@@ -281,7 +282,7 @@ namespace RegenDistCache.Tests
                     FarmClockToleranceSeconds = 0.1,
                 })
                 using (var node2Ext = new RedisInterceptOrMock(redisConnection, useMultipleRedisConnections))
-                using (var node2Cache = new RegenerativeCacheManager(testRunKeyspace, node2Ext.Cache, node2Ext.Lock, node2Ext.Bus, dtw.T2)
+                using (var node2Cache = new RegenerativeCacheManager(testRunKeyspace, node2Ext.Cache, node2Ext.Lock, node2Ext.Bus, tw.T2)
                 {
                     CacheExpiryToleranceSeconds = 1.5,
                     MinimumForwardSchedulingSeconds = 1,
@@ -400,12 +401,13 @@ namespace RegenDistCache.Tests
                     Assert.Equal(node2Result3, node1Result7);
                     Assert.Equal(node2Result3, node1Result8);
 
-                    dtw.Stop();
+                    tw.Stop();
+                    tw.Clear();
                 }
             }
             finally
             {
-                foreach (var l in dtw.GetOutput())
+                foreach (var l in tw.GetOutput())
                 {
                     _output.WriteLine(l);
                 }
@@ -421,12 +423,12 @@ namespace RegenDistCache.Tests
                 redisConnection = $"mock-{Guid.NewGuid():N}";
             }
 
-            var dtw = new DualTraceWriter();
+            var tw = new DualTraceWriter();
 
             try
             {
                 using (var node1Ext = new RedisInterceptOrMock(redisConnection, useMultipleRedisConnections))
-                using (var node1Cache = new RegenerativeCacheManager(testRunKeyspace, node1Ext.Cache, node1Ext.Lock, node1Ext.Bus, dtw.T1)
+                using (var node1Cache = new RegenerativeCacheManager(testRunKeyspace, node1Ext.Cache, node1Ext.Lock, node1Ext.Bus, tw.T1)
                 {
                     CacheExpiryToleranceSeconds = 1.5,
                     MinimumForwardSchedulingSeconds = 1,
@@ -434,7 +436,7 @@ namespace RegenDistCache.Tests
                     FarmClockToleranceSeconds = 0.1,
                 })
                 using (var node2Ext = new RedisInterceptOrMock(redisConnection, useMultipleRedisConnections))
-                using (var node2Cache = new RegenerativeCacheManager(testRunKeyspace, node2Ext.Cache, node2Ext.Lock, node2Ext.Bus, dtw.T2)
+                using (var node2Cache = new RegenerativeCacheManager(testRunKeyspace, node2Ext.Cache, node2Ext.Lock, node2Ext.Bus, tw.T2)
                 {
                     CacheExpiryToleranceSeconds = 1.5,
                     MinimumForwardSchedulingSeconds = 1,
@@ -507,11 +509,12 @@ namespace RegenDistCache.Tests
                     Assert.True(seenN2, string.Format(errmsg, "node2"));
                 }
 
-                dtw.Stop();
+                tw.Stop();
+                tw.Clear();
             }
             finally
             {
-                foreach (var l in dtw.GetOutput())
+                foreach (var l in tw.GetOutput())
                 {
                     _output.WriteLine(l);
                 }
