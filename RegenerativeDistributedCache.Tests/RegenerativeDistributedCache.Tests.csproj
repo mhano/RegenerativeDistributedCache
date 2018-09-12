@@ -71,7 +71,6 @@
     <Compile Include="CacheMgr.cs" />
     <Compile Include="Helpers\RedisInterceptOrMock.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Helpers\TraceWriter.cs" />
     <Compile Include="DynamicSkippableTests\TestRedisConfig.cs" />
   </ItemGroup>
   <ItemGroup>

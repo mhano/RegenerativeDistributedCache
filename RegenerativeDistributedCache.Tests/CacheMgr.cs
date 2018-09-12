@@ -178,12 +178,12 @@ namespace RegenDistCache.Tests
                 redisConnection = $"mock-{Guid.NewGuid():N}";
             }
 
-            var tw = new TraceWriter();
+            var tw = new DualTraceWriter();
 
             try
             {
                 using (var ext = new RedisInterceptOrMock(redisConnection, useMultipleRedisConnections))
-                using (var cache = new RegenerativeCacheManager(testRunKeyspace, ext.Cache, ext.Lock, ext.Bus, tw)
+                using (var cache = new RegenerativeCacheManager(testRunKeyspace, ext.Cache, ext.Lock, ext.Bus, tw.T1)
                 {
                     CacheExpiryToleranceSeconds = 1.5,
                     MinimumForwardSchedulingSeconds = 1,
@@ -248,7 +248,7 @@ namespace RegenDistCache.Tests
                     Assert.StartsWith("t3_", result5);
                     Assert.Equal(result5, result6);
 
-                    tw.StopAndClear();
+                    tw.Stop();
                 }
             }
             finally
@@ -400,7 +400,7 @@ namespace RegenDistCache.Tests
                     Assert.Equal(node2Result3, node1Result7);
                     Assert.Equal(node2Result3, node1Result8);
 
-                    dtw.StopAndClear();
+                    dtw.Stop();
                 }
             }
             finally
@@ -507,7 +507,7 @@ namespace RegenDistCache.Tests
                     Assert.True(seenN2, string.Format(errmsg, "node2"));
                 }
 
-                dtw.StopAndClear();
+                dtw.Stop();
             }
             finally
             {
