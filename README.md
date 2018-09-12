@@ -19,11 +19,11 @@ Builds
 
 ## RegenerativeDistributedCache.Redis
 
-Basic Redis backed implementations of the interfaces in RegenerativeDistributedCache.Interfaces for an external (network) cache, a fan out pub/sub message bus, and a distributed locking mechanism for use with RegenerativeDistributedCache.RegenerativeCacheManager.
+Basic Redis backed implementations of the interfaces in RegenerativeDistributedCache.Interfaces for an external (network) cache, a fan out pub / sub message bus, and a distributed locking mechanism for use with RegenerativeDistributedCache.RegenerativeCacheManager.
 
-Use a combination of RedisExternalCache, RedisDistributedLockFactory and RedisFanoutBus connected to your existing wiring / configuration of Redis/RedLock or replace components as needed (such as implementing a RabbitMq or MassTransit based IFanOutBus instead of RedisFanOutBus).
+Use a combination of RedisExternalCache, RedisDistributedLockFactory and RedisFanoutBus connected to your existing wiring / configuration of Redis / RedLock or replace components as needed (such as implementing a RabbitMq or MassTransit based IFanOutBus instead of RedisFanOutBus).
 
-CAUTION - The BasicRedisWrapper wraps up the creation of all three (either based on a single Redis connection, or a Redis connection per concern [caching/locking/messaging]) but performs some pretty basic implemention in regards to connecting to Redis, you will want to review the approach carefully prior to using.
+CAUTION - The BasicRedisWrapper wraps up the creation of all three (either based on a single Redis connection, or a Redis connection per concern [caching / locking / messaging]) but performs some pretty basic implemention in regards to connecting to Redis, you will want to review the approach carefully prior to using.
 
 ## RegenerativeCacheManager
 
@@ -33,7 +33,7 @@ Each node takes responsibility for regenerating the cache value if it hasn't bee
 
 ### Setup:
 
-As a static/shared instance or singleton from your IOC container:
+As a static / shared instance or singleton from your IOC container:
 
 ```C#
 regenerativeCacheManagerSingleton = new RegenerativeCacheManager(
@@ -85,7 +85,7 @@ regenerativeCacheManagerSingleton = new RegenerativeCacheManager(
 	new RedisFanOutBus(stackExchangeRedis_ISubscriber));
 ```
 
-### Setup (with alternative caching/locking/messaging implementations):
+### Setup (with alternative caching / locking / messaging implementations):
 Alternatively implement **IExternalCache** and or **IDistributedLockFactory** and or **IFanOutBus** (from **RegenerativeDistributedCache.Interfaces**) based on any distributed caching / messaging / locking implementations you would prefer to use. These interfaces require the absolute minimum implementation of the functionality required by RegenerativeCacheManager to operate efficiently and should be straight forward to implement against most off-the-shelf caching / locking / messaging solutions.
 
 ```C#
@@ -153,7 +153,7 @@ using(var awaiter = _correlatedAwaitManager.CreateAwaiter(key))
 	// awaiter has been created (or you could end up waiting forever / timing out).
 
 	// Often this involves a second test as to whether some result became
-	// available just now (some time before/after awaiter creation), therefore
+	// available just now (some time before / after awaiter creation), therefore
 	// we should double check it's not available as the notification about it
 	// may have been sent before we setup the awaiter.
 
