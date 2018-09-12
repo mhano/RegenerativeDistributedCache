@@ -49,7 +49,7 @@ regenerativeCacheManagerSingleton = new RegenerativeCacheManager(
 
 #### Practical Guidance on Time-spans / Timing Settings:
 * All up-front (above) settings should have the same values across a farm.
-* Regeneration Interval and Inactive Retention (below) should be consistent across a farm for a given key value.
+* Regeneration Interval and Inactive Retention (below) should generally be consistent across a farm for a given key value (Inactive Retention may differ between nodes in larger highly active clusters where you wish to limit the nodes involved in cache regeneration, i.e. limit regeneration of a particular item to a subset of nodes [assuming that these nodes are accessed frequently enough to extend the total period for which an item will be regularly regenerated]).
 * Clock differences between farm nodes should be minimised.
 * CacheExpiryToleranceSeconds (typically 30 seconds to minutes) should be greater than FarmClockToleranceSeconds (maximum amount of time clocks might differ amongst nodes).
 * TriggerDelaySeconds (delay in causing expired MemoryCache items to be removed, 1 second works with current .net Framework - do not set below 1).
