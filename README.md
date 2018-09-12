@@ -98,7 +98,7 @@ interface IDistributedLockFactory {
     IDisposable CreateLock(string lockKey, TimeSpan lockExpiryTime); }
 
 interface IFanOutBus {
-	void Subscribe(string topicKey, Action<string> messageReceive);
+    void Subscribe(string topicKey, Action<string> messageReceive);
     void Publish(string topicKey, string value); }
 ```
 
