@@ -108,13 +108,13 @@ interface IFanOutBus {
 var result = regenerativeCacheManagerSingleton.GetOrAdd(
     key: $"{nameof(Item)}:{itemId}", 
 
-	// will not be called if value exists
+    // will not be called if value exists
     generateFunc: () => GetItem(itemId).AsString(),
 
-	// total time in cache and regenerating after last GetOrAdd call
+    // total time regenerating after last GetOrAdd call on current machine
     inactiveRetention: TimeSpan.FromMinutes(30),
 
-	// how frequently to update cache from generateFunc()
+    // how frequently to update cache from generateFunc()
     regenerationInterval : TimeSpan.FromMinutes(2)
 );
 ```
