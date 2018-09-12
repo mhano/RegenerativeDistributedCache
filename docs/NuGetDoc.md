@@ -42,14 +42,7 @@ regenerativeCacheManagerSingleton = new RegenerativeCacheManager(
 ```
 
 #### Practical Guidance on Time-spans / Timing Settings:
-* All up-front (above) settings should have the same values across a farm.
-* Regeneration Interval and Inactive Retention (below) should be consistent across a farm for a given key value.
-* Clock differences between farm nodes should be minimised.
-* CacheExpiryToleranceSeconds (typically 30 seconds to minutes) should be greater than FarmClockToleranceSeconds (maximum amount of time clocks might differ amongst nodes).
-* TriggerDelaySeconds (delay in causing expired MemoryCache items to be removed, 1 second works with current .net Framework - do not set below 1).
-* RegenerationInterval (below) should be comfortably larger than the time it takes to generate a value.
-* InactiveRetention (below) is the period of time for which scheduled background re-generation of value continues to be scheduled.
-* Generation occurs once per regenerationInterval (regardless of how long generation takes).
+* [Refer to full documentation on GitHub](https://github.com/mhano/RegenerativeDistributedCache).
 
 ### Use:
 
@@ -57,13 +50,13 @@ regenerativeCacheManagerSingleton = new RegenerativeCacheManager(
 var result = regenerativeCacheManagerSingleton.GetOrAdd(
     key: $"{nameof(Item)}:{itemId}", 
 
-	// will not be called if value exists
+    // will not be called if value exists
     generateFunc: () => GetItem(itemId).AsString(),
 
-	// total time in cache and regenerating after last GetOrAdd call
+    // total time regenerating after last GetOrAdd call on current machine
     inactiveRetention: TimeSpan.FromMinutes(30),
 
-	// how frequently to update cache from generateFunc()
+    // how frequently to update cache from generateFunc()
     regenerationInterval : TimeSpan.FromMinutes(2)
 );
 ```
