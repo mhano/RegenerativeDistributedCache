@@ -75,7 +75,7 @@ Typical use is to support multiple local threads receiving a notification from s
 
 CorrelatedAwaitManager receives a copy of all messages delivered to it then delivers to any threads that have setup an awaiter for the specified key value.
 
-Basically a very short lived hyper efficient subscribe mechanism to support coordination within in distributed system, much cheaper than setting up a typical subscriber.
+Basically a very short lived hyper efficient subscribe mechanism to support coordination within a distributed system, much cheaper than setting up a typical subscriber.
 
 *used in RegenerativeCacheManager*
 
