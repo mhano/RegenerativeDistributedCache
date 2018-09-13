@@ -91,10 +91,12 @@ Alternatively implement **IExternalCache** and or **IDistributedLockFactory** an
 ```C#
 interface IExternalCache {
     void StringSet(string key, string val, TimeSpan absoluteExpiration);
+    // both of these should return null if item not found in cache
     string StringGetWithExpiry(string key, out TimeSpan absoluteExpiry);
     string GetStringStart(string key, int length); }
 
 interface IDistributedLockFactory {
+    // return null if lock not immediately acquired, object will be disposed to release lock
     IDisposable CreateLock(string lockKey, TimeSpan lockExpiryTime); }
 
 interface IFanOutBus {
