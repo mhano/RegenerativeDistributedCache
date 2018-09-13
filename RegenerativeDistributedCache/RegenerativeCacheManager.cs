@@ -134,17 +134,19 @@ namespace RegenerativeDistributedCache
 
                     if (msg != null)
                     {
-                        // Processing NOT deferred as NotifyAwaiters seperates the important task of getting current
-                        // awaiters out of the way and then setting TaskCompletionSource results (none of this actually
-                        // continues on to processing the subsoquent work of the awaiter).
-
-                        _correlatedAwaitManager.NotifyAwaiters(msg);
-
-                        // remove from local cache if value not generated on this node
+                        // remove from local cache if value not generated on this node so that first awaiter
+                        // (if any) retrieves from network cache. Moved this to before notify to cater for a 
+                        // very unlikely race condition (could not produce n testing) that could cause a 
+                        // double retrieval from network cache.
                         if (msg.Success && !msg.IsLocalSender(_localSenderId))
                         {
                             _underlyingCache.RemoveLocal(msg.Key);
                         }
+
+                        // Processing NOT deferred as NotifyAwaiters seperates the important task of getting current
+                        // awaiters out of the way and then setting TaskCompletionSource results (none of this actually
+                        // continues on to processing the subsoquent work of the awaiter).
+                        _correlatedAwaitManager.NotifyAwaiters(msg);
                     }
                 }
             );
