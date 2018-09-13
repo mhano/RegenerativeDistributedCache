@@ -6,20 +6,15 @@
     <title>$title$</title>
     <authors>$author$</authors>
     <owners>$author$</owners>
-    <licenseUrl>https://opensource.org/licenses/mit</licenseUrl>
+    <licenseUrl>https://raw.githubusercontent.com/mhano/RegenerativeDistributedCache/master/LICENSE</licenseUrl>
     <projectUrl>https://github.com/mhano/RegenerativeDistributedCache</projectUrl>
     <iconUrl>https://raw.githubusercontent.com/mhano/RegenerativeDistributedCache/master/docs/Icon.png</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <copyright>$copyright$</copyright>
     <description>$description$</description>
-<summary>A cache that supports scheduling the regeneration of cache items in the background ahead of their
-expiry and manages this across a farm of web/service nodes minimising duplicated cache value 
-generation work.
+<summary>A cache that supports scheduling the regeneration of cache items in the background ahead of their expiry and manages this across a farm of web/service nodes minimising duplicated cache value generation work.
 
-Requires an external (network) cache, a fan out pub/sub message bus, and a distributed locking
-mechanism (all three of these can be provided by Redis or you might use alternatives for one or
-more of these such as RabbitMq for messaging). Basic redis implementations of these are provided
-in RegenerativeCacheManager.Redis.</summary>
+Requires an external (network) cache, a fan out pub/sub message bus, and a distributed locking mechanism (all three of these can be provided by Redis or you might use alternatives for one or more of these such as RabbitMq for messaging). Basic redis implementations of these are provided in RegenerativeCacheManager.Redis.</summary>
     <tags>RegenerativeCacheManager CorrelatedAwaitManager MemoryFrontedExternalCache cache caching farm network distributed message messaging correlated correlate correlating background refresh regenerate regenerative redis rabbitmq pre-emptive</tags>
   </metadata>
 </package>

@@ -15,7 +15,7 @@ Requires an external (network) cache, a fan out pub/sub message bus, and a distr
 
 Basic Redis backed implementations of the interfaces in RegenerativeDistributedCache.Interfaces for an external (network) cache, a fan out pub/sub message bus, and a distributed locking mechanism for use with RegenerativeDistributedCache.RegenerativeCacheManager.
 
-Use a combination of RedisExternalCache, RedisDistributedLockFactory and RedisFanoutBus connected to your existing wiring / configuration of Redis/RedLock or replace components as needed (such as implementing a RabbitMq or MassTransit based IFanOutBus instead of RedisFanOutBus).
+Use a combination of RedisExternalCache, RedisDistributedLockFactory and RedisFanoutBus connected to your existing wiring / configuration of Redis / RedLock or replace components as needed (such as implementing a RabbitMq or MassTransit based IFanOutBus instead of RedisFanOutBus).
 
 CAUTION - The BasicRedisWrapper wraps up the creation of all three (either based on a single Redis connection, or a Redis connection per concern [caching/locking/messaging]) but performs some pretty basic implemention in regards to connecting to Redis, you will want to review the approach carefully prior to using.
 

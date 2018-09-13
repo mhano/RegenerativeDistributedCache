@@ -3,9 +3,9 @@ using Xunit;
 
 namespace RegenDistCache.Tests.DynamicSkippableTests
 {
-    public class SkippableFactAttribute : FactAttribute
+    public class SkippableIfNoRedisFactAttribute : FactAttribute
     {
-        public SkippableFactAttribute()
+        public SkippableIfNoRedisFactAttribute()
         {
             SkipIfNoLocalRedis(this);
         }
@@ -14,7 +14,7 @@ namespace RegenDistCache.Tests.DynamicSkippableTests
         {
             try
             {
-                TestMachineHasRedis.SkipLiveRedisBasedTests();
+                TestRedisConfig.SkipLiveRedisBasedTests();
             }
             catch (Exception ex)
             {

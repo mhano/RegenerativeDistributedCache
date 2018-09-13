@@ -54,10 +54,10 @@ namespace RegenDistCache.Tests
             public SingleNodeGetsOneConn(ITestOutputHelper output) { _output = output; }
             #endregion
 
-            [SkippableFact]
+            [SkippableIfNoRedisFact]
             public void T()
             {
-                var redisConnection = TestMachineHasRedis.GetTestEnvironmentRedis();
+                var redisConnection = TestRedisConfig.GetTestEnvironmentRedis();
                 SingleNodeGetsInternal(redisConnection, false, _output);
             }
         }
@@ -69,10 +69,10 @@ namespace RegenDistCache.Tests
             public SingleNodeGetsMultiConn(ITestOutputHelper output) { _output = output; }
             #endregion
 
-            [SkippableFact]
+            [SkippableIfNoRedisFact]
             public void T()
             {
-                var redisConnection = TestMachineHasRedis.GetTestEnvironmentRedis();
+                var redisConnection = TestRedisConfig.GetTestEnvironmentRedis();
                 SingleNodeGetsInternal(redisConnection, true, _output);
             }
         }
@@ -98,10 +98,10 @@ namespace RegenDistCache.Tests
             public MultiNodeGetsOneConn(ITestOutputHelper output) { _output = output; }
             #endregion
 
-            [Fact]
+            [SkippableIfNoRedisFact]
             public void T()
             {
-                var redisConnection = TestMachineHasRedis.GetTestEnvironmentRedis();
+                var redisConnection = TestRedisConfig.GetTestEnvironmentRedis();
 
                 MultiNodeGetsInternal(redisConnection, false, _output);
             }
@@ -114,10 +114,10 @@ namespace RegenDistCache.Tests
             public MultiNodeGetsMultiConn(ITestOutputHelper output) { _output = output; }
             #endregion
 
-            [Fact]
+            [SkippableIfNoRedisFact]
             public void T()
             {
-                var redisConnection = TestMachineHasRedis.GetTestEnvironmentRedis();
+                var redisConnection = TestRedisConfig.GetTestEnvironmentRedis();
 
                 MultiNodeGetsInternal(redisConnection, true, _output);
             }
@@ -144,10 +144,10 @@ namespace RegenDistCache.Tests
             public NodesCompeteOneConn(ITestOutputHelper output) { _output = output; }
             #endregion
 
-            [Fact]
+            [SkippableIfNoRedisFact]
             public void T()
             {
-                var redisConnection = TestMachineHasRedis.GetTestEnvironmentRedis();
+                var redisConnection = TestRedisConfig.GetTestEnvironmentRedis();
 
                 NodesCompeteInternal(redisConnection, false, _output);
             }
@@ -160,10 +160,10 @@ namespace RegenDistCache.Tests
             public NodesCompeteMultiConn(ITestOutputHelper output) { _output = output; }
             #endregion
 
-            [Fact]
+            [SkippableIfNoRedisFact]
             public void T()
             {
-                var redisConnection = TestMachineHasRedis.GetTestEnvironmentRedis();
+                var redisConnection = TestRedisConfig.GetTestEnvironmentRedis();
 
                 NodesCompeteInternal(redisConnection, true, _output);
             }
@@ -178,12 +178,12 @@ namespace RegenDistCache.Tests
                 redisConnection = $"mock-{Guid.NewGuid():N}";
             }
 
-            var tw = new TraceWriter();
+            var tw = new DualTraceWriter();
 
             try
             {
                 using (var ext = new RedisInterceptOrMock(redisConnection, useMultipleRedisConnections))
-                using (var cache = new RegenerativeCacheManager(testRunKeyspace, ext.Cache, ext.Lock, ext.Bus, tw)
+                using (var cache = new RegenerativeCacheManager(testRunKeyspace, ext.Cache, ext.Lock, ext.Bus, tw.T1)
                 {
                     CacheExpiryToleranceSeconds = 1.5,
                     MinimumForwardSchedulingSeconds = 1,
@@ -248,7 +248,8 @@ namespace RegenDistCache.Tests
                     Assert.StartsWith("t3_", result5);
                     Assert.Equal(result5, result6);
 
-                    tw.StopAndClear();
+                    tw.Stop();
+                    tw.Clear();
                 }
             }
             finally
@@ -269,11 +270,11 @@ namespace RegenDistCache.Tests
                 redisConnection = $"mock-{Guid.NewGuid():N}";
             }
 
-            var dtw = new DualTraceWriter();
+            var tw = new DualTraceWriter();
             try
             {
                 using (var node1Ext = new RedisInterceptOrMock(redisConnection, useMultipleRedisConnections))
-                using (var node1Cache = new RegenerativeCacheManager(testRunKeyspace, node1Ext.Cache, node1Ext.Lock, node1Ext.Bus, dtw.T1)
+                using (var node1Cache = new RegenerativeCacheManager(testRunKeyspace, node1Ext.Cache, node1Ext.Lock, node1Ext.Bus, tw.T1)
                 {
                     CacheExpiryToleranceSeconds = 1.5,
                     MinimumForwardSchedulingSeconds = 1,
@@ -281,7 +282,7 @@ namespace RegenDistCache.Tests
                     FarmClockToleranceSeconds = 0.1,
                 })
                 using (var node2Ext = new RedisInterceptOrMock(redisConnection, useMultipleRedisConnections))
-                using (var node2Cache = new RegenerativeCacheManager(testRunKeyspace, node2Ext.Cache, node2Ext.Lock, node2Ext.Bus, dtw.T2)
+                using (var node2Cache = new RegenerativeCacheManager(testRunKeyspace, node2Ext.Cache, node2Ext.Lock, node2Ext.Bus, tw.T2)
                 {
                     CacheExpiryToleranceSeconds = 1.5,
                     MinimumForwardSchedulingSeconds = 1,
@@ -400,12 +401,13 @@ namespace RegenDistCache.Tests
                     Assert.Equal(node2Result3, node1Result7);
                     Assert.Equal(node2Result3, node1Result8);
 
-                    dtw.StopAndClear();
+                    tw.Stop();
+                    tw.Clear();
                 }
             }
             finally
             {
-                foreach (var l in dtw.GetOutput())
+                foreach (var l in tw.GetOutput())
                 {
                     _output.WriteLine(l);
                 }
@@ -421,12 +423,12 @@ namespace RegenDistCache.Tests
                 redisConnection = $"mock-{Guid.NewGuid():N}";
             }
 
-            var dtw = new DualTraceWriter();
+            var tw = new DualTraceWriter();
 
             try
             {
                 using (var node1Ext = new RedisInterceptOrMock(redisConnection, useMultipleRedisConnections))
-                using (var node1Cache = new RegenerativeCacheManager(testRunKeyspace, node1Ext.Cache, node1Ext.Lock, node1Ext.Bus, dtw.T1)
+                using (var node1Cache = new RegenerativeCacheManager(testRunKeyspace, node1Ext.Cache, node1Ext.Lock, node1Ext.Bus, tw.T1)
                 {
                     CacheExpiryToleranceSeconds = 1.5,
                     MinimumForwardSchedulingSeconds = 1,
@@ -434,7 +436,7 @@ namespace RegenDistCache.Tests
                     FarmClockToleranceSeconds = 0.1,
                 })
                 using (var node2Ext = new RedisInterceptOrMock(redisConnection, useMultipleRedisConnections))
-                using (var node2Cache = new RegenerativeCacheManager(testRunKeyspace, node2Ext.Cache, node2Ext.Lock, node2Ext.Bus, dtw.T2)
+                using (var node2Cache = new RegenerativeCacheManager(testRunKeyspace, node2Ext.Cache, node2Ext.Lock, node2Ext.Bus, tw.T2)
                 {
                     CacheExpiryToleranceSeconds = 1.5,
                     MinimumForwardSchedulingSeconds = 1,
@@ -494,7 +496,7 @@ namespace RegenDistCache.Tests
                                          $"i.e. 1 in {Math.Pow(2, (int)(end.Subtract(start).TotalSeconds / regenerationInterval.TotalSeconds)) / 2:#,##0}.";
 
 
-                    _output.WriteLine($"90% of results should be identical, {(countOfEqual / results.Count) * 100:0}% were ({countOfEqual} / {results.Count}). {probabilityMsg}");
+                    // _output.WriteLine($"90% of results should be identical, {(countOfEqual / results.Count) * 100:0}% were ({countOfEqual} / {results.Count}). {probabilityMsg}");
 
                     Assert.True(results.Count > 19,
                         $"Shouldn't see any cache regeneration / node competition for 2 to 3 seconds. Saw different results in only {DateTime.Now.Subtract(start).TotalMilliseconds*1000:#,##0.0}us.");
@@ -507,11 +509,12 @@ namespace RegenDistCache.Tests
                     Assert.True(seenN2, string.Format(errmsg, "node2"));
                 }
 
-                dtw.StopAndClear();
+                tw.Stop();
+                tw.Clear();
             }
             finally
             {
-                foreach (var l in dtw.GetOutput())
+                foreach (var l in tw.GetOutput())
                 {
                     _output.WriteLine(l);
                 }

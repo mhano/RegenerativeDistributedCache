@@ -15,19 +15,19 @@ namespace RegenDistCache.Tests
         public RedisWraps(ITestOutputHelper output)
         { _output = output; }
 
-        [SkippableFact]
+        [SkippableIfNoRedisFact]
         public void Locks()
         {
-            var redisConnection = TestMachineHasRedis.GetTestEnvironmentRedis();
+            var redisConnection = TestRedisConfig.GetTestEnvironmentRedis();
 
             var testId = Guid.NewGuid();
             using (var basicRedis1 = new BasicRedisWrapper(redisConnection, false))
             using (var basicRedis2 = new BasicRedisWrapper(redisConnection, false))
             using (var basicRedis3 = new BasicRedisWrapper(redisConnection, false))
             {
-                using (var lck1A = basicRedis1.Lock.CreateLock($"{typeof(TestMachineHasRedis).FullName}:Lock1:{testId:N}", TimeSpan.FromSeconds(30)))
-                using (var lck2 = basicRedis2.Lock.CreateLock($"{typeof(TestMachineHasRedis).FullName}:Lock2:{testId:N}", TimeSpan.FromSeconds(30)))
-                using (var lck1B = basicRedis3.Lock.CreateLock($"{typeof(TestMachineHasRedis).FullName}:Lock1:{testId:N}", TimeSpan.FromSeconds(30)))
+                using (var lck1A = basicRedis1.Lock.CreateLock($"{typeof(TestRedisConfig).FullName}:Lock1:{testId:N}", TimeSpan.FromSeconds(30)))
+                using (var lck2 = basicRedis2.Lock.CreateLock($"{typeof(TestRedisConfig).FullName}:Lock2:{testId:N}", TimeSpan.FromSeconds(30)))
+                using (var lck1B = basicRedis3.Lock.CreateLock($"{typeof(TestRedisConfig).FullName}:Lock1:{testId:N}", TimeSpan.FromSeconds(30)))
                 {
                     Assert.NotNull(lck1A);
                     Assert.NotNull(lck2);
@@ -36,18 +36,18 @@ namespace RegenDistCache.Tests
             }
         }
 
-        [SkippableFact]
+        [SkippableIfNoRedisFact]
         public void Caching()
         {
-            var redisConnection = TestMachineHasRedis.GetTestEnvironmentRedis();
+            var redisConnection = TestRedisConfig.GetTestEnvironmentRedis();
 
             using (var basicRedis1 = new BasicRedisWrapper(redisConnection, false))
             using (var basicRedis2 = new BasicRedisWrapper(redisConnection, false))
             {
-                var cacheKey = $"{typeof(TestMachineHasRedis).FullName}:Cache:{Guid.NewGuid():N}";
-                var cacheKeyMissing = $"{typeof(TestMachineHasRedis).FullName}:CacheMissing:{Guid.NewGuid():N}";
-                var cacheVal1 = $"{typeof(TestMachineHasRedis).FullName}:CacheVal1:{Guid.NewGuid():N}";
-                var cacheVal2 = $"{typeof(TestMachineHasRedis).FullName}:CacheVal2:{Guid.NewGuid():N}";
+                var cacheKey = $"{typeof(TestRedisConfig).FullName}:Cache:{Guid.NewGuid():N}";
+                var cacheKeyMissing = $"{typeof(TestRedisConfig).FullName}:CacheMissing:{Guid.NewGuid():N}";
+                var cacheVal1 = $"{typeof(TestRedisConfig).FullName}:CacheVal1:{Guid.NewGuid():N}";
+                var cacheVal2 = $"{typeof(TestRedisConfig).FullName}:CacheVal2:{Guid.NewGuid():N}";
 
                 // basic write/read
                 basicRedis1.Cache.StringSet(cacheKey, cacheVal1, TimeSpan.FromSeconds(3));
@@ -99,17 +99,17 @@ namespace RegenDistCache.Tests
             }
         }
 
-        [SkippableFact]
+        [SkippableIfNoRedisFact]
         public void Messaging()
         {
-            var redisConnection = TestMachineHasRedis.GetTestEnvironmentRedis();
+            var redisConnection = TestRedisConfig.GetTestEnvironmentRedis();
 
             var testId = Guid.NewGuid();
             using (var basicRedis1 = new BasicRedisWrapper(redisConnection, false))
             using (var basicRedis2 = new BasicRedisWrapper(redisConnection, false))
             {
-                var topic1 = $"{typeof(TestMachineHasRedis).FullName}:Bus:{Guid.NewGuid():N}";
-                var topic2 = $"{typeof(TestMachineHasRedis).FullName}:Bus:{Guid.NewGuid():N}";
+                var topic1 = $"{typeof(TestRedisConfig).FullName}:Bus:{Guid.NewGuid():N}";
+                var topic2 = $"{typeof(TestRedisConfig).FullName}:Bus:{Guid.NewGuid():N}";
 
                 string
                     t1M1B1S1 = $"testmsg-{Guid.NewGuid():N}",

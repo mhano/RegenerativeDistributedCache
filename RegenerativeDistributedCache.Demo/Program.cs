@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -39,11 +40,12 @@ namespace RegenerativeDistributedCache.Demo
             var doRegTest = true;
             var doPerfTest = true;
 
+            var writePerformanceCsv = false;
             var writeTraceOutputFile = false;
             var writeHtmlOutputFile = false;
             var outputFolder = "c:\\temp\\";
 
-            var perfTestCount = 10000000;
+            var perfTestCount = 1000000;
             var perfTestMeasure = 100000;
 
             var keyspace = $"keyspace{Guid.NewGuid():N}";
@@ -65,7 +67,8 @@ namespace RegenerativeDistributedCache.Demo
 
             var synchedConsole = new SynchedColouredConsoleTraceWriter(
                 traceFileName: writeTraceOutputFile ? $"{outputFolder}RegenerativeCacheManagerDemo_{keyspace}_{id}.txt" : null,
-                htmlFileName: writeHtmlOutputFile ? $"{outputFolder}RegenerativeCacheManagerDemo_{keyspace}_{id}.html" : null
+                htmlFileName: writeHtmlOutputFile ? $"{outputFolder}RegenerativeCacheManagerDemo_{keyspace}_{id}.html" : null,
+                performanceFileName: writePerformanceCsv ? $"{outputFolder}RegenerativeCacheManagerDemo_{keyspace}_{id}.csv" : null
             );
 
             using (var ct1R = new BasicRedisWrapper("localhost"))
@@ -137,6 +140,7 @@ namespace RegenerativeDistributedCache.Demo
                     synchedConsole.WriteLine($"First error: {(ex as AggregateException)?.InnerExceptions.First().ToString() ?? ex.ToString()}", ConsoleColor.White, ConsoleColor.Red);
                 }
 
+                while (MonitoredWorkBag.TryTake(out Tuple<Task, TimeSpan> tr)) tr.Item1.Dispose();
             }
 
             if (doRegTest && doPerfTest) synchedConsole.OpenNewOutputFile();
@@ -189,7 +193,7 @@ namespace RegenerativeDistributedCache.Demo
 
                 ShowStats(synchedConsole);
 
-                while (MonitoredWorkBag.TryTake(out Tuple<Task, TimeSpan> tr)) { tr.Item1.Dispose(); }
+                while (MonitoredWorkBag.TryTake(out Tuple<Task, TimeSpan> tr)) tr.Item1.Dispose();
 
                 GC.Collect();
             }
@@ -277,9 +281,13 @@ Results & performance of sample...
                 synchedConsole.WriteLine($"MonitorWork: testId:{testId}: {sw.Elapsed.TotalMilliseconds * 1000:#,##0.0}(us)", ConsoleColor.White, ConsoleColor.Blue);
                 task = task ?? Task.FromCanceled<string>(CancellationToken.None);
 
+                var tpl = new Tuple<Task, TimeSpan>(task, sw.Elapsed);
+
+                synchedConsole.WritePerformanceSample(tpl);
+
                 if (task.IsCanceled || task.IsFaulted || (Interlocked.Increment(ref _measureSeq) % _perTestMeasureEveryN) == 0)
                 {
-                    MonitoredWorkBag.Add(new Tuple<Task, TimeSpan>(task, sw.Elapsed));
+                    MonitoredWorkBag.Add(tpl);
                 }
             }
         }

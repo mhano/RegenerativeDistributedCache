@@ -6,24 +6,17 @@
     <title>$title$</title>
     <authors>$author$</authors>
     <owners>$author$</owners>
-    <licenseUrl>https://opensource.org/licenses/mit</licenseUrl>
+    <licenseUrl>https://raw.githubusercontent.com/mhano/RegenerativeDistributedCache/master/LICENSE</licenseUrl>
     <projectUrl>https://github.com/mhano/RegenerativeDistributedCache</projectUrl>
     <iconUrl>https://raw.githubusercontent.com/mhano/RegenerativeDistributedCache/master/docs/Icon.png</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <copyright>$copyright$</copyright>
     <description>$description$</description>
-<summary>Basic redis backed implementations of the interfaces in RegenerativeDistributedCache.Interfaces for
-an external (network) cache, a fan out pub/sub message bus, and a distributed locking mechanism for
-use with RegenerativeDistributedCache.RegenerativeCacheManager.
+<summary>Basic redis backed implementations of the interfaces in RegenerativeDistributedCache.Interfaces for an external (network) cache, a fan out pub/sub message bus, and a distributed locking mechanism for use with RegenerativeDistributedCache.RegenerativeCacheManager.
 
-Use a combination of RedisExternalCache, RedisDistributedLockFactory and RedisFanoutBus connected
-to your existing wiring / configuration redis/redlock or replace components as needed (such as
-implementing a RabbitMq or MassTransit based IFanOutBus instead of RedisFanOutBus).
+Use a combination of RedisExternalCache, RedisDistributedLockFactory and RedisFanoutBus connected to your existing wiring / configuration of Redis / Redlock or replace components as needed (such as implementing a RabbitMq or MassTransit based IFanOutBus instead of RedisFanOutBus).
 
-CAUTION - The BasicRedisWrapper wraps up the creation of all three (either based on a single redis
-connection, or a redis connection per concern [caching/locking/messaging]) but performs some pretty
-basic implemention in regards to connecting to redis, you will want to review the approach carefully
-prior to using.</summary>
+CAUTION - The BasicRedisWrapper wraps up the creation of all three (either based on a single redis connection, or a redis connection per concern [caching/locking/messaging]) but performs some pretty basic implemention in regards to connecting to redis, you will want to review the approach carefully prior to using.</summary>
     <tags>RegenerativeCacheManager CorrelatedAwaitManager MemoryFrontedExternalCache cache caching farm network distributed message messaging correlated correlate correlating background refresh regenerate regenerative redis rabbitmq pre-emptive</tags>
     <dependencies>
       <dependency id="RegenerativeDistributedCache" version="$version$" />
