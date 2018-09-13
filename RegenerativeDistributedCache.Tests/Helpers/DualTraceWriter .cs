@@ -44,9 +44,13 @@ namespace RegenDistCache.Tests.Helpers
         private int _sequenceSource;
         private bool _stopped;
 
-        public void StopAndClear()
+        public void Stop()
         {
             _stopped = true;
+        }
+
+        public void Clear()
+        {
             while (CollectedOutput.TryTake(out var tr)) ;
         }
 

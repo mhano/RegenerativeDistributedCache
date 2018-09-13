@@ -15,15 +15,18 @@ namespace RegenerativeDistributedCache.Demo
 
         private int _msgSeq = 0;
         private readonly string _traceFileName;
+        private readonly string _performanceFileName;
         private readonly string _htmlFileName;
         private StreamWriter _htmlOutputFile;
         private StreamWriter _traceOutputFile;
+        private StreamWriter _performanceOutputFile;
         private int _fileSeq = 0;
 
-        public SynchedColouredConsoleTraceWriter(string traceFileName = null, string htmlFileName = null)
+        public SynchedColouredConsoleTraceWriter(string traceFileName = null, string htmlFileName = null, string performanceFileName = null)
         {
             _traceFileName = traceFileName;
             _htmlFileName = htmlFileName;
+            _performanceFileName = performanceFileName;
 
             OpenNewOutputFile();
         }
@@ -62,6 +65,14 @@ namespace RegenerativeDistributedCache.Demo
                 _htmlOutputFile.WriteLine("<html><body style=\"background-color: black; font-size: 10; font-family: consolas,courier-new,fixed-width;\">");
                 _htmlOutputFile.WriteLine($"<h1 style=\"color: white;\">{DateTime.Now}</h1>");
             }
+
+            if (!string.IsNullOrWhiteSpace(_performanceFileName))
+            {
+                _performanceOutputFile = new StreamWriter(File.Open(
+                    $"{Path.GetDirectoryName(_performanceFileName)}\\{Path.GetFileNameWithoutExtension(_performanceFileName)}_{_fileSeq++}{Path.GetExtension(_performanceFileName)}"
+                    , FileMode.Create, FileAccess.ReadWrite, FileShare.Read));
+                _performanceOutputFile.WriteLine("Duration_us,Status");
+            }
         }
 
         public void CloseAndStopAllWriting()
@@ -80,6 +91,8 @@ namespace RegenerativeDistributedCache.Demo
             _htmlOutputFile?.WriteAsync("</body></html>");
             _htmlOutputFile?.Close();
             _htmlOutputFile = null;
+            _performanceOutputFile?.Close();
+            _performanceOutputFile = null;
         }
 
         public void WriteLine(string msg, ConsoleColor? fgColor = null, ConsoleColor? bgColor = null, bool overrideShowOutput = false)
@@ -145,6 +158,8 @@ namespace RegenerativeDistributedCache.Demo
                 Console.ForegroundColor = fg;
                 Console.BackgroundColor = bg;
                 Console.WriteLine(txt);
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.BackgroundColor = ConsoleColor.Black;
 
                 _htmlOutputFile?.WriteLine($"<span style=\"color: {fg.ToString().ToLowerInvariant()}; background-color: {bg.ToString().ToLowerInvariant()}\">{txt.Replace("\r", "").Replace("\n", "<br/>\r\n")}</span><br/>");
             }
@@ -162,6 +177,12 @@ namespace RegenerativeDistributedCache.Demo
             WriteLine($"------- wait {duration}");
             Task.Delay(TimeSpan.FromSeconds(duration)).Wait();
             WriteLine($"------- waited {duration}");
+        }
+
+        public void WritePerformanceSample(Tuple<Task, TimeSpan> monitoredWork)
+        {
+            lock (_lockSync)
+                _performanceOutputFile?.WriteLine($"{monitoredWork.Item2.TotalMilliseconds*1000:0.0},{monitoredWork.Item1.Status}");
         }
     }
 }
