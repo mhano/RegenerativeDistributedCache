@@ -19,11 +19,11 @@ Builds
 
 ## RegenerativeDistributedCache.Redis
 
-Basic Redis backed implementations of the interfaces in RegenerativeDistributedCache.Interfaces for an external (network) cache, a fan out pub/sub message bus, and a distributed locking mechanism for use with RegenerativeDistributedCache.RegenerativeCacheManager.
+Basic Redis backed implementations of the interfaces in RegenerativeDistributedCache.Interfaces for an external (network) cache, a fan out pub / sub message bus, and a distributed locking mechanism for use with RegenerativeDistributedCache.RegenerativeCacheManager.
 
 Use a combination of RedisExternalCache, RedisDistributedLockFactory and RedisFanoutBus connected to your existing wiring / configuration of Redis/RedLock or replace components as needed (such as implementing a RabbitMq or MassTransit based IFanOutBus instead of RedisFanOutBus).
 
-CAUTION - The BasicRedisWrapper wraps up the creation of all three (either based on a single Redis connection, or a Redis connection per concern [caching/locking/messaging]) but performs some pretty basic implemention in regards to connecting to Redis, you will want to review the approach carefully prior to using.
+CAUTION - The BasicRedisWrapper wraps up the creation of all three (either based on a single Redis connection, or a Redis connection per concern [caching / locking / messaging]) but performs some pretty basic implemention in regards to connecting to Redis, you will want to review the approach carefully prior to using.
 
 ## RegenerativeCacheManager
 
@@ -49,7 +49,7 @@ regenerativeCacheManagerSingleton = new RegenerativeCacheManager(
 
 #### Practical Guidance on Time-spans / Timing Settings:
 * All up-front (above) settings should have the same values across a farm.
-* Regeneration Interval and Inactive Retention (below) should be consistent across a farm for a given key value.
+* Regeneration Interval and Inactive Retention (below) should generally be consistent across a farm for a given key value (Inactive Retention may differ between nodes in larger highly active clusters where you wish to limit the nodes involved in cache regeneration, i.e. limit regeneration of a particular item to a subset of nodes [assuming that these nodes are accessed frequently enough to extend the total period for which an item will be regularly regenerated]).
 * Clock differences between farm nodes should be minimised.
 * CacheExpiryToleranceSeconds (typically 30 seconds to minutes) should be greater than FarmClockToleranceSeconds (maximum amount of time clocks might differ amongst nodes).
 * TriggerDelaySeconds (delay in causing expired MemoryCache items to be removed, 1 second works with current .net Framework - do not set below 1).
@@ -57,19 +57,64 @@ regenerativeCacheManagerSingleton = new RegenerativeCacheManager(
 * InactiveRetention (below) is the period of time for which scheduled background re-generation of value continues to be scheduled.
 * Generation occurs once per regenerationInterval (regardless of how long generation takes).
 
+### Setup (with basic Redis wiring / configuration):
+
+BASIC REDIS CONNECTION SETUP ONLY. BasicRedisWrapper is a simple wrapper of StackExchange.Redis and RedLock.Net for caching, locking and messaging. Uses a single Redis connection for caching, locking and messaging (unless told to create three). Creates a single ConnectionMultiplexer based on the supplied configuration string (or one per concern). More advanced Redis deployments may require setup of multiple connection multiplexers, see the alternative below if required.
+
+```C#
+var basicRedis = new BasicRedisWrapper(
+                        redisConfiguration: "host:6379",
+                        useMultipleRedisConnections: false);
+
+regenerativeCacheManagerSingleton = new RegenerativeCacheManager(
+	// Key space should be unique within app domain and redis
+	// database but consistent across nodes in a farm.
+	keyspace: "myAppKeyspace",
+	externalCache: basicRedis.Cache,
+	distributedLockFactory: basicRedis.Lock,
+	fanOutBus: basicRedis.Bus);
+```
+
+### Setup (with your own Redis wiring):
+
+```C#
+regenerativeCacheManagerSingleton = new RegenerativeCacheManager(
+	"myAppKeyspace",
+	new RedisExternalCache(stackExchangeRedis_IDatabase),
+	new RedisDistributedLockFactory(redLockNet_IDistributedLockFactory),
+	new RedisFanOutBus(stackExchangeRedis_ISubscriber));
+```
+
+### Setup (with alternative caching / locking / messaging implementations):
+Alternatively implement **IExternalCache** and or **IDistributedLockFactory** and or **IFanOutBus** (from **RegenerativeDistributedCache.Interfaces**) based on any distributed caching / messaging / locking implementations you would prefer to use. These interfaces require the absolute minimum implementation of the functionality required by RegenerativeCacheManager to operate efficiently and should be straight forward to implement against most off-the-shelf caching / locking / messaging solutions.
+
+```C#
+interface IExternalCache {
+    void StringSet(string key, string val, TimeSpan absoluteExpiration);
+    string StringGetWithExpiry(string key, out TimeSpan absoluteExpiry);
+    string GetStringStart(string key, int length); }
+
+interface IDistributedLockFactory {
+    IDisposable CreateLock(string lockKey, TimeSpan lockExpiryTime); }
+
+interface IFanOutBus {
+    void Subscribe(string topicKey, Action<string> messageReceive);
+    void Publish(string topicKey, string value); }
+```
+
 ### Use:
 
 ```C#
 var result = regenerativeCacheManagerSingleton.GetOrAdd(
     key: $"{nameof(Item)}:{itemId}", 
 
-	// will not be called if value exists
+    // will not be called if value exists
     generateFunc: () => GetItem(itemId).AsString(),
 
-	// total time in cache and regenerating after last GetOrAdd call
+    // total time regenerating after last GetOrAdd call on current machine
     inactiveRetention: TimeSpan.FromMinutes(30),
 
-	// how frequently to update cache from generateFunc()
+    // how frequently to update cache from generateFunc()
     regenerationInterval : TimeSpan.FromMinutes(2)
 );
 ```
@@ -81,7 +126,7 @@ Typical use is to support multiple local threads receiving a notification from s
 
 CorrelatedAwaitManager receives a copy of all messages delivered to it then delivers to any threads that have setup an awaiter for the specified key value.
 
-Basically a very short lived hyper efficient subscribe mechanism to support coordination within in distributed system, much cheaper than setting up a typical subscriber.
+Basically a very short lived hyper efficient subscribe mechanism to support coordination within a distributed system, much cheaper than setting up a typical subscriber.
 
 *used in RegenerativeCacheManager*
 
