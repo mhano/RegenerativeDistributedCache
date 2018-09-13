@@ -168,17 +168,21 @@ namespace RegenerativeDistributedCache
 
             var traceId = _traceWriter == null ? null : $"{_localSenderId}-{Guid.NewGuid():N}";
 
-            _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(GetOrAdd)}: TraceId:{traceId}: cache check for schedule: {key}");
-            var triggerExists = _regenTriggers.UpdateLastActivity(key, traceId);
-            _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(GetOrAdd)}: TraceId:{traceId}: cache CHECKED for schedule: {key}");
+            // Don't schedule a regeneration if inactive retention is lower then regenration interval
+            // inactive retention may be zero on a large farm where only some nodes participate in 
+            // regular regeneration (to reduce the number of nodes competing for a lock to have the right
+            // to regenerate).
+            var triggerRequired = maxInactiveRetention > regenerationInterval;
+            var triggerExistsIfChecked = false;
+            if(triggerRequired) triggerExistsIfChecked = _regenTriggers.UpdateLastActivity(key, traceId);
 
             // Cache hit if we have a scheduled regeneration happening AND the value is in local or redis cache
-            if (triggerExists && (cacheResult = _underlyingCache.Get($"{key}")) != null)
+            if ((!triggerRequired || triggerExistsIfChecked) && (cacheResult = _underlyingCache.Get($"{key}")) != null)
             {
                 _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(GetOrAdd)}: TraceId:{traceId}: cache HIT: {key}");
                 return cacheResult.Value;
             }
-            else if (!triggerExists && (cacheResult = _underlyingCache.Get($"{key}")) != null)
+            else if (triggerRequired && !triggerExistsIfChecked && (cacheResult = _underlyingCache.Get($"{key}")) != null)
             {
                 // got value from cache and local trigger doesn't exist, schedule the trigger and return the result
                 _traceWriter?.Write($"{nameof(RegenerativeCacheManager)}: {nameof(GetOrAdd)}: TraceId:{traceId}: remote cache HIT: {key}, regneration scheduled.");
@@ -229,11 +233,14 @@ namespace RegenerativeDistributedCache
                     // schedule based on generation time of current cache item + regenerationInterval
                     // if this was first request (schedule not already setup then we don't schedule (maxInactiveRetention/regenerationInterval) generations
                     // as they are likely (or could be all errors). Allow next successful request to setup schedule (and pay a cache miss penalty).
-                    _regenTriggers.EnsureTriggerScheduled(key, () => 
-                        RegenerateIfNotUnderway(key, generateFunc, regenerationInterval, true, traceId), 
-                        maxInactiveRetention, regenerationInterval, cacheResult.CreateCommenced, 
-                        traceId: traceId);
-
+                    if (triggerRequired)
+                    {
+                        _regenTriggers.EnsureTriggerScheduled(key, () => 
+                            RegenerateIfNotUnderway(key, generateFunc, regenerationInterval, true, traceId), 
+                            maxInactiveRetention, regenerationInterval, cacheResult.CreateCommenced, 
+                            traceId: traceId);
+                    }
+                    
                     return cacheResult.Value;
                 }
             }
