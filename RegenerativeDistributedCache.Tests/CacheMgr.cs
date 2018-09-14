@@ -355,7 +355,7 @@ namespace RegenDistCache.Tests
                     Assert.Equal(totalPublished, node2Ext.ReceivedMessages.Count);
 
                     // two to four total lock attempt (depending on thread race conditions)
-                    Assert.InRange(node1Ext.LockAttempts.Count + node2Ext.LockAttempts.Count, 2, 4);
+                    Assert.InRange(node1Ext.LockAttempts.Count + node2Ext.LockAttempts.Count, 2, 6);
 
                     // two successful locks across the farm (initial generation + 1 regeneration)
                     Assert.InRange(node1Ext.LockAttempts.Count(l => l.Value) + node2Ext.LockAttempts.Count(l => l.Value),
