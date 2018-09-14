@@ -21,6 +21,7 @@ CAUTION - The BasicRedisWrapper wraps up the creation of all three (either based
     <dependencies>
       <dependency id="RegenerativeDistributedCache" version="$version$" />
       <dependency id="RedLock.net.StrongName" version="2.0.0" />
+      <dependency id="StackExchange.Redis.StrongName" version="1.1.608" />
     </dependencies>
   </metadata>
 </package>
